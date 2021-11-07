@@ -89,7 +89,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   }
 }
 
-int batt_v;
+float batt_v;
 
 void pressed()
 {
@@ -170,6 +170,7 @@ void setup() {
     // Some display settings
     tft->setTextColor(random(0xFFFF));
     tft->drawString(mac_address,  5, 50, 4);
+    tft->drawString(sensor_clock + " : " + sensor_data,  5, 10, 4);
     tft->setTextFont(4);
     tft->setTextColor(TFT_WHITE, TFT_BLACK);
     
@@ -219,14 +220,16 @@ void loop() {
     Serial.println(quatReal, 2);
 
      tft->fillRect(98, 100, 70, 85, TFT_BLACK);
-      tft->setCursor(80, 100);
+      tft->setCursor(80, 90);
       tft->print("X:"); tft->println(quatI);
-      tft->setCursor(80, 130);
+      tft->setCursor(80, 120);
       tft->print("Y:"); tft->println(quatJ);
-      tft->setCursor(80, 160);
+      tft->setCursor(80, 150);
       tft->print("Z:"); tft->println(quatK);
-      tft->setCursor(80, 190);
+      tft->setCursor(80, 180);
       tft->print("W:"); tft->println(quatReal);
+      tft->setCursor(80, 230);
+      tft->print("batt:"); tft->println(batt_v);
 
       String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}"; 
       Serial.println(url);
