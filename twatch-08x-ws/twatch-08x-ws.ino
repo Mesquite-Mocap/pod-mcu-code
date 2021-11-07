@@ -89,6 +89,21 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   }
 }
 
+int batt_v;
+
+void pressed()
+{
+       watch->power->adc1Enable(AXP202_VBUS_VOL_ADC1 | AXP202_VBUS_CUR_ADC1 | AXP202_BATT_CUR_ADC1 | AXP202_BATT_VOL_ADC1, true);
+    // get the values
+     batt_v = watch->power->getBattVoltage();
+   // int per = watch->power->getBattPercentage();
+      watch->setBrightness(100);
+}
+
+void released()
+{
+        watch->setBrightness(0);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -102,12 +117,14 @@ void setup() {
     // Turn on the backlight
     watch->openBL();
 
+
     //Receive objects for easy writing
     tft = watch->tft;
 
 
 
-
+   watch->button->setPressedHandler(pressed);
+   watch->button->setReleasedHandler(released);
 
 
 
@@ -172,10 +189,13 @@ void setup() {
 
     webSocket.sendTXT(String(millis()).c_str());
 
+    watch->setBrightness(0);
+
   
 }
 
 void loop() {
+    watch->button->loop();
     webSocket.loop();
  if ((millis() - lastTime) > timerDelay) {
     //Check WiFi connection status
@@ -207,9 +227,8 @@ void loop() {
       tft->print("Z:"); tft->println(quatK);
       tft->setCursor(80, 190);
       tft->print("W:"); tft->println(quatReal);
-         
 
-      String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK + ",\"w\":" + quatReal + "}"; 
+      String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}"; 
       Serial.println(url);
       webSocket.sendTXT(url.c_str());
 
