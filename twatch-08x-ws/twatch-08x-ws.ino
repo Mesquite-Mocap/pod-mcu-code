@@ -170,7 +170,7 @@ void setup() {
   Serial.println("Timer set to 5 seconds (timerDelay variable), it will take 5 seconds before publishing the first reading.");
 
   mac_address = WiFi.macAddress();
-
+  Serial.println(macAddress);
     // Some display settings
     tft->setTextColor(random(0xFFFF));
     String t = sensor_clock + " : " + sensor_data;
