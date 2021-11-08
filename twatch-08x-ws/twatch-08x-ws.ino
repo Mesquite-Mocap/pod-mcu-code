@@ -4,7 +4,7 @@
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
-#include <WebSocketsClient.h>
+#include <WebSocketsClient.h> // https://github.com/Links2004/arduinoWebSockets
 
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
