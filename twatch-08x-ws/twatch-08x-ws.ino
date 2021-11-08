@@ -95,8 +95,12 @@ void pressed()
 {
        watch->power->adc1Enable(AXP202_VBUS_VOL_ADC1 | AXP202_VBUS_CUR_ADC1 | AXP202_BATT_CUR_ADC1 | AXP202_BATT_VOL_ADC1, true);
     // get the values
+     float vbus_v = watch->power->getVbusVoltage();
+    float vbus_c = watch->power->getVbusCurrent();
      batt_v = watch->power->getBattVoltage();
-   // int per = watch->power->getBattPercentage();
+    int per = watch->power->getBattPercentage();
+         Serial.println(per);
+
       watch->setBrightness(100);
 }
 
@@ -169,10 +173,11 @@ void setup() {
 
     // Some display settings
     tft->setTextColor(random(0xFFFF));
-    tft->drawString(mac_address,  5, 50, 4);
-    tft->drawString(sensor_clock + " : " + sensor_data,  5, 10, 4);
+    String t = sensor_clock + " : " + sensor_data;
+    tft->drawString(mac_address,  5, 5, 4);
     tft->setTextFont(4);
     tft->setTextColor(TFT_WHITE, TFT_BLACK);
+
     
   delay(500);
   // server address, port and URL
@@ -211,6 +216,7 @@ void loop() {
     float quatReal = myIMU.getQuatReal();
     float quatRadianAccuracy = myIMU.getQuatRadianAccuracy();
 
+/*
     Serial.print(quatI, 2);
     Serial.print(F(" "));
     Serial.print(quatK, 2);
@@ -218,8 +224,11 @@ void loop() {
     Serial.print(quatJ, 2);
     Serial.print(F(" "));
     Serial.println(quatReal, 2);
+    */
 
      tft->fillRect(98, 100, 70, 85, TFT_BLACK);
+      tft->setCursor(80, 60);
+      tft->print("Pins: "); tft->print(sensor_clock);tft->print(",");tft->print(sensor_data);
       tft->setCursor(80, 90);
       tft->print("X:"); tft->println(quatI);
       tft->setCursor(80, 120);
@@ -228,11 +237,11 @@ void loop() {
       tft->print("Z:"); tft->println(quatK);
       tft->setCursor(80, 180);
       tft->print("W:"); tft->println(quatReal);
-      tft->setCursor(80, 230);
-      tft->print("batt:"); tft->println(batt_v);
+      tft->setCursor(80, 210);
+     // tft->print("batt:"); tft->println(batt_v);
 
       String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}"; 
-      Serial.println(url);
+      //Serial.println(url);
       webSocket.sendTXT(url.c_str());
 
   }
