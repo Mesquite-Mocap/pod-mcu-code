@@ -26,8 +26,8 @@ BNO080 myIMU;
 const char* ssid = "mmocap";
 const char* password = "movement";
 String serverIP = "192.168.1.20";
-int sensor_clock = 25;
-int sensor_data = 26;
+int sensor_clock = 22;
+int sensor_data = 21;
 
 String mac_address;
 
@@ -238,7 +238,7 @@ void loop() {
       tft->setCursor(80, 180);
       tft->print("W:"); tft->println(quatReal);
       tft->setCursor(80, 210);
-     // tft->print("batt:"); tft->println(batt_v);
+      // tft->print("batt:"); tft->println(batt_v);
 
       String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}"; 
       //Serial.println(url);
