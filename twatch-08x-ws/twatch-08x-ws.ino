@@ -1,7 +1,11 @@
+/*
+This is the arduino file for each of the Seedlings (the TTGO Watches). The hardware used is the Lilygo® ttgo watch 2019 edition. 
 
 
-#include <WiFi.h>
-#include <WiFiMulti.h>
+*/
+
+#include <WiFi.h> // connect to Wifi
+#include <WiFiMulti.h> // This will scan for different  WiFi network 
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <WebSocketsClient.h> // https://github.com/Links2004/arduinoWebSockets
@@ -56,6 +60,11 @@ void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
   Serial.printf("\n");
 }
 
+/*
+
+This section will be event handling for the web sockets
+*/ 
+
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
@@ -90,6 +99,14 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 }
 
 float batt_v;
+
+/*
+
+Below section handles the watch screen. To conserve energy on the watch:
+
+void pressed() handles whether or not the second button is pressed to turn on the screen. Otherwise, it will remain off. 
+
+*/ 
 
 void pressed()
 {
@@ -153,6 +170,7 @@ void setup() {
 
   delay(500);
   
+  // this is just to look for open Wifi connections. 
    
   WiFiMulti.addAP(ssid, password);
   
@@ -163,12 +181,17 @@ void setup() {
     Serial.print(".");
   }
   
+  // connect to Wifi and get IP. IP is used to establish connection with the router and the web socket to push data. 
+  
   Serial.println("");
   Serial.print("Connected to WiFi network with IP Address: ");
   Serial.println(WiFi.localIP());
  
   Serial.println("Timer set to 5 seconds (timerDelay variable), it will take 5 seconds before publishing the first reading.");
 
+  
+  // we need to get the MAC address for each device in order to differentiate devices AND to align them to different parts of the body. 
+  
   mac_address = WiFi.macAddress();
   Serial.println(mac_address);
     // Some display settings
@@ -181,6 +204,8 @@ void setup() {
     
   delay(500);
   // server address, port and URL
+  
+  // this information is used for pushing the data. 
 
   webSocket.begin(serverIP, 3000, "/");
 
@@ -200,13 +225,17 @@ void setup() {
   
 }
 
+
+
 void loop() {
     watch->button->loop();
-    webSocket.loop();
+    webSocket.loop(); // open the websocket and continue to connect to it
  if ((millis() - lastTime) > timerDelay) {
     //Check WiFi connection status
     if(WiFi.status()== WL_CONNECTED){
 
+
+      /*  get the quartian locations  */
 
   if (myIMU.dataAvailable() == true)
   {
