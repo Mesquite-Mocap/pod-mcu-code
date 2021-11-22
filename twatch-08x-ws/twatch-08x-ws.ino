@@ -23,13 +23,14 @@ TFT_eSPI *tft;
 #include "SparkFun_BNO080_Arduino_Library.h" // Click here to get the library: http://librarymanager/All#SparkFun_BNO080
 BNO080 myIMU;
 
+// ID wifi to connect to 
 const char* ssid = "mmocap";
 const char* password = "movement";
 String serverIP = "192.168.1.20";
-int sensor_clock = 22;
-int sensor_data = 21;
+int sensor_clock = 21; // updated clock - double check your soldering 
+int sensor_data = 22; // this is from the soldering. double check what you have soldered your data to 
 
-String mac_address;
+String mac_address; // identifies each sed
 
 
 // the following variables are unsigned longs because the time, measured in
@@ -56,18 +57,23 @@ void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
   Serial.printf("\n");
 }
 
+/*
+ * Event handling for the websocket.  
+ * This is from WebSocketClient.h 
+ */
+
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
-    case WStype_DISCONNECTED:
+    case WStype_DISCONNECTED:  //when disconnected 
       Serial.printf("[WSc] Disconnected!\n");
       break;
-    case WStype_CONNECTED:
+    case WStype_CONNECTED: //when connected 
       Serial.printf("[WSc] Connected to url: %s\n", payload);
 
       // send message to server when Connected
-      webSocket.sendTXT("Connected");
+      webSocket.sendTXT("Connected"); //validation that you've connected
       break;
-    case WStype_TEXT:
+    case WStype_TEXT: //when you get a message 
       Serial.printf("[WSc] get text: %s\n", payload);
 
       // send message to server
@@ -91,6 +97,10 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 float batt_v;
 
+/*
+ *  void pressed() handles keeping the screen off unless the second button is pressed. 
+ */
+
 void pressed()
 {
        watch->power->adc1Enable(AXP202_VBUS_VOL_ADC1 | AXP202_VBUS_CUR_ADC1 | AXP202_BATT_CUR_ADC1 | AXP202_BATT_VOL_ADC1, true);
@@ -109,7 +119,19 @@ void released()
         watch->setBrightness(0);
 }
 
+/*
+ * Initial set up. This will:  
+ * 
+ * 1. initialize the watch and open ports to receive information. 
+ * 2. Connect to Wifi (Wifi.h) 
+ * 3. Enable the rotational vector 
+ * 4. Get the MAC address for each device for identification purposes. 
+ * 5. This will also send time data to the server 
+ */
+
 void setup() {
+
+  // Initialize the watch 
   Serial.begin(115200);
 
       // Get TTGOClass instance
@@ -126,7 +148,7 @@ void setup() {
     tft = watch->tft;
 
 
-
+// This intiliazes the button press handler that we defined earlier 
    watch->button->setPressedHandler(pressed);
    watch->button->setReleasedHandler(released);
 
@@ -138,6 +160,7 @@ void setup() {
   myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
   Wire.begin(sensor_clock, sensor_data);
 
+// If there is something wrong with the IMU information, check your soldering 
    if (myIMU.begin() == false)
   {
     Serial.println("BNO080 not detected at default I2C address. Check your jumpers and the hookup guide. Freezing...");
@@ -145,6 +168,8 @@ void setup() {
   }
 
   Wire.setClock(400000); //Increase I2C data rate to 400kHz
+
+  // This is for the IMU information 
 
   myIMU.enableRotationVector(50); //Send data update every 50ms
 
@@ -155,6 +180,8 @@ void setup() {
   
    
   WiFiMulti.addAP(ssid, password);
+
+  // Connect to the WiFi 
   
   Serial.println("Connecting");
 
@@ -164,11 +191,12 @@ void setup() {
   }
   
   Serial.println("");
-  Serial.print("Connected to WiFi network with IP Address: ");
+  Serial.print("Connected to WiFi network with IP Address: "); //this will be the local IP 
   Serial.println(WiFi.localIP());
  
   Serial.println("Timer set to 5 seconds (timerDelay variable), it will take 5 seconds before publishing the first reading.");
 
+// The MAC address will identify each individual device 
   mac_address = WiFi.macAddress();
   Serial.println(mac_address);
     // Some display settings
@@ -181,6 +209,7 @@ void setup() {
     
   delay(500);
   // server address, port and URL
+
 
   webSocket.begin(serverIP, 3000, "/");
 
@@ -199,6 +228,13 @@ void setup() {
 
   
 }
+
+/*
+ * This is the actual code that runs constantly. This will: 
+ * 
+ * 1. Take the IMU data 
+ * 2. Pass it through to the router 
+ */
 
 void loop() {
     watch->button->loop();
@@ -239,6 +275,8 @@ void loop() {
       tft->print("W:"); tft->println(quatReal);
       tft->setCursor(80, 210);
       // tft->print("batt:"); tft->println(batt_v);
+
+      //send to server 
 
       String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}"; 
       //Serial.println(url);
