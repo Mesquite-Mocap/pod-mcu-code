@@ -35,4 +35,20 @@ Now, you need to install the [T-Watch library](https://github.com/Xinyuan-LilyGO
 Connect a Pod via USB cable and choose your port in the Arduino IDE. On MacOS it should be obvious which port you need to choose and on Windows you need to guess and check until you find the correct port.
 ![choosingport](https://mesquite-mocap.github.io/images/image5.png)
 
-Open the [pod-mcu-code](https://github.com/Mesquite-Mocap/pod-mcu-code). You will need to change lines 26-28. Make sure your router is plugged in and turned on. Add your router’s SSID, password, and serverIP address as the variables for line 26, 27, and 28 respectively. Compile and run the edited pMake sure your router is plugged in and turned onod-mcu-code on your T-Watch by clicking on the check mark and arrow buttons in the top left corner of the IDE. Open up the serial monitor to make sure the watch streams data. Also, you will want to write down the mac address for each watch as you go since we will use the mac address to map each joint later on. Repeat this process for each TTGO T-Watch in the pod.
+Open the [pod-mcu-code](https://github.com/Mesquite-Mocap/pod-mcu-code). 
+
+You will need to change lines 26-28. Make sure your router is plugged in and turned on. Add your router’s SSID, password, and serverIP address as the variables for line 26, 27, and 28 respectively. 
+
+```
+// ID wifi to connect to 
+const char* ssid = "mmocap";
+const char* password = "movement";
+String serverIP = "192.168.1.20";
+int sensor_clock = 21; // updated clock - double check your soldering 
+int sensor_data = 22; // this is from the soldering. double check what you have soldered your data to 
+```
+
+Compile and run the edited pMake sure your router is plugged in and turned onod-mcu-code on your T-Watch by clicking on the check mark and arrow buttons in the top left corner of the IDE. Open up the serial monitor to make sure the watch streams data. 
+
+
+Also, you will want to write down the mac address for each watch as you go since we will use the mac address to map each joint later on. Repeat this process for each TTGO T-Watch in the pod.
