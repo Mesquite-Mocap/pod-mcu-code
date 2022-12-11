@@ -286,7 +286,7 @@ void loop() {
       //send to server 
 
       String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}"; 
-      Serial.println(url);
+      //Serial.println(url);
       webSocket.sendTXT(url.c_str());
 
   }
