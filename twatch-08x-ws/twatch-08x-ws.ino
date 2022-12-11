@@ -24,13 +24,13 @@ TFT_eSPI *tft;
 BNO080 myIMU;
 
 // ID wifi to connect to 
-const char* ssid = "mmocap";
+const char* ssid = "mesquiteMocap";
 const char* password = "movement";
-String serverIP = "192.168.1.20";
-int sensor_clock = 21; // updated clock - double check your soldering 
-int sensor_data = 22; // this is from the soldering. double check what you have soldered your data to 
+String serverIP = "mocap.local";
+int sensor_clock = 22; // updated clock - double check your soldering 
+int sensor_data = 21; // this is from the soldering. double check what you have soldered your data to 
 
-String mac_address; // identifies each sed
+String mac_address; // identifies each seed
 
 
 // the following variables are unsigned longs because the time, measured in
@@ -154,11 +154,15 @@ void setup() {
 
 
 
-  delay(100); //  Wait for BNO to boot
+  delay(1000); //  Wait for BNO to boot
   // Start i2c and BNO080
   Wire.flush();   // Reset I2C
-  myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
-  Wire.begin(sensor_clock, sensor_data);
+  delay(100);
+
+      Wire.begin(sensor_clock, sensor_data);
+
+  myIMU.begin(0x4B, Wire);
+
 
 // If there is something wrong with the IMU information, check your soldering 
    if (myIMU.begin() == false)
