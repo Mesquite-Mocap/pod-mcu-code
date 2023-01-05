@@ -29,8 +29,8 @@ BNO080 myIMU;
 const char* ssid = "mesquiteMocap";
 const char* password = "movement";
 String serverIP = "mocap.local";
-int sensor_clock = 22; // updated clock - double check your soldering 
-int sensor_data = 21; // this is from the soldering. double check what you have soldered your data to 
+int sensor_clock = 22; int sensor_data = 21;
+//int sensor_clock = 27; int sensor_data = 26;
 
 String mac_address; // identifies each seed
 
