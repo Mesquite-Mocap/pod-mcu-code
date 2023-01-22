@@ -1,5 +1,3 @@
-
-
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
@@ -8,8 +6,6 @@
 
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
-
-
 
 #define LILYGO_WATCH_2019_WITH_TOUCH 
 #include <LilyGoWatch.h>
@@ -26,9 +22,10 @@ TFT_eSPI *tft;
 BNO080 myIMU;
 
 // ID wifi to connect to 
-const char* ssid = "mesquiteMocap";
-const char* password = "movement";
+const char* ssid = "SETUP-AE05";
+const char* password = "faucet4039dozed";
 String serverIP = "mocap.local";
+// String serverIP = "192.168.0.210";
 int sensor_clock = 22; // updated clock - double check your soldering 
 int sensor_data = 21; // this is from the soldering. double check what you have soldered your data to 
 
@@ -151,7 +148,10 @@ void setup() {
 
   // This is for the IMU information 
 
-  myIMU.enableRotationVector(50); //Send data update every 50ms
+  myIMU.enableRotationVector(100); //Send data update every 50ms
+  myIMU.enableAccelerometer(100);
+  myIMU.enableGyro(100);
+  myIMU.enableMagnetometer(100);
 
   Serial.println(F("Rotation vector enabled"));
   Serial.println(F("Output in form i, j, k, real, accuracy"));
@@ -161,30 +161,23 @@ void setup() {
   // Initialize the watch 
   Serial.begin(115200);
 
-      // Get TTGOClass instance
-    watch = TTGOClass::getWatch();
+//       // Get TTGOClass instance
+//     watch = TTGOClass::getWatch();
 
-    // Initialize the hardware, the BMA423 sensor has been initialized internally
-    watch->begin();
+//     // Initialize the hardware, the BMA423 sensor has been initialized internally
+//     watch->begin();
 
-    // Turn on the backlight
-    watch->openBL();
-
-
-    //Receive objects for easy writing
-    tft = watch->tft;
+//     // Turn on the backlight
+//     watch->openBL();
 
 
-// This intiliazes the button press handler that we defined earlier 
-   watch->button->setPressedHandler(pressed);
-   watch->button->setReleasedHandler(released);
+//     //Receive objects for easy writing
+//     tft = watch->tft;
 
 
-
-
-
-
-  
+// // This intiliazes the button press handler that we defined earlier 
+//    watch->button->setPressedHandler(pressed);
+//    watch->button->setReleasedHandler(released);
    
   WiFiMulti.addAP(ssid, password);
 
@@ -207,11 +200,11 @@ void setup() {
   mac_address = WiFi.macAddress();
   Serial.println(mac_address);
     // Some display settings
-    tft->setTextColor(random(0xFFFF));
-    String t = sensor_clock + " : " + sensor_data;
-    tft->drawString(mac_address,  5, 5, 4);
-    tft->setTextFont(4);
-    tft->setTextColor(TFT_WHITE, TFT_BLACK);
+    // tft->setTextColor(random(0xFFFF));
+    // String t = sensor_clock + " : " + sensor_data;
+    // tft->drawString(mac_address,  5, 5, 4);
+    // tft->setTextFont(4);
+    // tft->setTextColor(TFT_WHITE, TFT_BLACK);
 
     
   delay(500);
@@ -231,7 +224,7 @@ void setup() {
 
     webSocket.sendTXT(String(millis()).c_str());
 
-    watch->setBrightness(0);
+    // watch->setBrightness(0);
 
   
 }
@@ -244,11 +237,11 @@ void setup() {
  */
 
 void loop() {
-    watch->button->loop();
+    // watch->button->loop();
     webSocket.loop();
- if ((millis() - lastTime) > timerDelay) {
+  if ((millis() - lastTime) > timerDelay) {
     //Check WiFi connection status
-    if(WiFi.status()== WL_CONNECTED){
+    if(WiFi.status()== WL_CONNECTED) {
 
 
   if (myIMU.dataAvailable() == true)
@@ -258,6 +251,18 @@ void loop() {
     float quatK = myIMU.getQuatK();
     float quatReal = myIMU.getQuatReal();
     float quatRadianAccuracy = myIMU.getQuatRadianAccuracy();
+
+    float accX = myIMU.getAccelX();
+    float accY = myIMU.getAccelY();
+    float accZ = myIMU.getAccelZ();
+
+    float magX = myIMU.getMagX();
+    float magY = myIMU.getMagY();
+    float magZ = myIMU.getMagZ();
+
+    float gyroX = myIMU.getGyroX();
+    float gyroY = myIMU.getGyroY();
+    float gyroZ = myIMU.getGyroZ();
 
 /*
     Serial.print(quatI, 2);
@@ -269,30 +274,42 @@ void loop() {
     Serial.println(quatReal, 2);
     */
 
-     tft->fillRect(98, 100, 70, 85, TFT_BLACK);
-      tft->setCursor(80, 60);
-      tft->print("Pins: "); tft->print(sensor_clock);tft->print(",");tft->print(sensor_data);
-      tft->setCursor(80, 90);
-      tft->print("X:"); tft->println(quatI);
-      tft->setCursor(80, 120);
-      tft->print("Y:"); tft->println(quatJ);
-      tft->setCursor(80, 150);
-      tft->print("Z:"); tft->println(quatK);
-      tft->setCursor(80, 180);
-      tft->print("W:"); tft->println(quatReal);
-      tft->setCursor(80, 210);
+    //  tft->fillRect(98, 100, 70, 85, TFT_BLACK);
+    //   tft->setCursor(80, 60);
+    //   tft->print("Pins: "); tft->print(sensor_clock);tft->print(",");tft->print(sensor_data);
+    //   tft->setCursor(80, 90);
+    //   tft->print("X:"); tft->println(quatI);
+    //   tft->setCursor(80, 120);
+    //   tft->print("Y:"); tft->println(quatJ);
+    //   tft->setCursor(80, 150);
+    //   tft->print("Z:"); tft->println(quatK);
+    //   tft->setCursor(80, 180);
+    //   tft->print("W:"); tft->println(quatReal);
+    //   tft->setCursor(80, 210);
       // tft->print("batt:"); tft->println(batt_v);
 
       //send to server 
 
-      String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}"; 
-      //Serial.println(url);
+      // Madgwick* m = new Madgwick(quatI, quatJ, quatK, quatReal);
+      // m->updateIMU(gyroX, gyroY, gyroZ, accX, accY, accZ);
+
+      // String url = "{\"id\": \"" + mac_address + "\",\"x\":" + m->getQ0() + ",\"y\":" + m->getQ1() + ",\"z\":" + m->getQ2() +  ",\"w\":" + m->getQ3() + 
+      //               ",\"batt\":" + batt_v + "}";
+
+
+      // String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v +
+      //               ",\"accX\":" + accX + ",\"accY\":" + accY + ",\"accZ\":" + accZ + 
+      //               ",\"gyroX\":" + gyroX + ",\"gyroY\":" + gyroY + ",\"gyroZ\":" + gyroZ + "}";
+
+      String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v +
+                    ",\"accX\":" + accX + ",\"accY\":" + accY + ",\"accZ\":" + accZ + 
+                    ",\"gyroX\":" + gyroX + ",\"gyroY\":" + gyroY + ",\"gyroZ\":" + gyroZ + 
+                    ",\"magX\":" + magX + ",\"magY\":" + magY + ",\"mag\":" + gyroZ + "}";
+
+      // String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}";
+      Serial.println(url);
       webSocket.sendTXT(url.c_str());
-
   }
-  
-
-
     }
     else {
       Serial.println("WiFi Disconnected");
