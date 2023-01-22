@@ -206,7 +206,6 @@ void setup() {
     // tft->setTextFont(4);
     // tft->setTextColor(TFT_WHITE, TFT_BLACK);
 
-
   delay(500);
   // server address, port and URL
 
@@ -225,7 +224,6 @@ void setup() {
     webSocket.sendTXT(String(millis()).c_str());
 
     // watch->setBrightness(0);
-
 
 }
 
