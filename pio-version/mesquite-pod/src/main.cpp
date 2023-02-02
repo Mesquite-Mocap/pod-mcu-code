@@ -2,7 +2,12 @@
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include <Iir.h>
+#include <math.h>
 #include <WebSocketsClient.h> // https://github.com/Links2004/arduinoWebSockets
+#include <iostream>
+#include <iomanip>
+#include <sstream>
 
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
@@ -25,6 +30,7 @@ BNO080 myIMU;
 const char* ssid = "SETUP-AE05";
 const char* password = "faucet4039dozed";
 String serverIP = "mocap.local";
+// String serverIP = "192.168.0.38";
 // String serverIP = "192.168.0.210";
 int sensor_clock = 22; // updated clock - double check your soldering
 int sensor_data = 21; // this is from the soldering. double check what you have soldered your data to
@@ -42,6 +48,28 @@ unsigned long timerDelay = 10;
 
 String response;
 
+float velX=0, velY=0, velZ=0;
+float disX=0, disY=0, disZ=0;
+float freq = 50;
+int packetnum=1;
+
+// const int order = 1;
+// Iir::Butterworth::HighPass<order> hfilt;
+// const float samplingrate = 1000/15.625;
+// const float high_cutoff_frequency = 2;
+
+// Iir::Butterworth::LowPass<order> lfilt;
+// const float low_cutoff_frequency = 10;
+
+// Iir::Butterworth::HighPass<order> velXfilt;
+// const float vel_cutoff_frequency = 0.2;
+// Iir::Butterworth::HighPass<order> velYfilt;
+// Iir::Butterworth::HighPass<order> velZfilt;
+
+// Iir::Butterworth::HighPass<order> disXfilt;
+// const float dis_cutoff_frequency = 0.2;
+// Iir::Butterworth::HighPass<order> disYfilt;
+// Iir::Butterworth::HighPass<order> disZfilt;
 
 void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
   const uint8_t* src = (const uint8_t*) mem;
@@ -129,6 +157,14 @@ void released()
  */
 
 void setup() {
+  // hfilt.setup(samplingrate, high_cutoff_frequency);
+  // lfilt.setup(samplingrate, low_cutoff_frequency);
+  // velXfilt.setup(samplingrate, vel_cutoff_frequency);
+  // velYfilt.setup(samplingrate, vel_cutoff_frequency);
+  // velZfilt.setup(samplingrate, vel_cutoff_frequency);
+  // disXfilt.setup(samplingrate, dis_cutoff_frequency);
+  // disYfilt.setup(samplingrate, dis_cutoff_frequency);
+  // disZfilt.setup(samplingrate, dis_cutoff_frequency);
 
   delay(1000); //  Wait for BNO to boot
   // Start i2c and BNO080
@@ -144,17 +180,19 @@ void setup() {
     while (1);
   }
 
-  Wire.setClock(400000); //Increase I2C data rate to 400kHz
-
   // This is for the IMU information
 
-  myIMU.enableRotationVector(100); //Send data update every 50ms
-  myIMU.enableAccelerometer(100);
-  myIMU.enableGyro(100);
-  myIMU.enableMagnetometer(100);
+  myIMU.enableRotationVector(freq); //Send data update every 50ms
+  myIMU.enableAccelerometer(freq);
+  myIMU.enableLinearAccelerometer(freq);
+  // myIMU.enableRawAccelerometer(4000);
+  myIMU.enableGyro(freq);
+  // myIMU.enableMagnetometer(4000);
 
   Serial.println(F("Rotation vector enabled"));
   Serial.println(F("Output in form i, j, k, real, accuracy"));
+
+  Wire.setClock(400000); //Increase I2C data rate to 400kHz
 
   delay(500);
 
@@ -236,7 +274,7 @@ void setup() {
 
 void loop() {
     // watch->button->loop();
-    webSocket.loop();
+  webSocket.loop();
   if ((millis() - lastTime) > timerDelay) {
     //Check WiFi connection status
     if(WiFi.status()== WL_CONNECTED) {
@@ -250,9 +288,14 @@ void loop() {
     float quatReal = myIMU.getQuatReal();
     float quatRadianAccuracy = myIMU.getQuatRadianAccuracy();
 
-    float accX = myIMU.getAccelX();
-    float accY = myIMU.getAccelY();
-    float accZ = myIMU.getAccelZ();
+    float accX = myIMU.getAccelX()/9.81;
+    float accY = myIMU.getAccelY()/9.81;
+    float accZ = myIMU.getAccelZ()/9.81;
+    float accAccuracy = myIMU.getAccelAccuracy();
+
+    float LaccX = myIMU.getLinAccelX();
+    float LaccY = myIMU.getLinAccelY();
+    float LaccZ = myIMU.getLinAccelZ();
 
     float magX = myIMU.getMagX();
     float magY = myIMU.getMagY();
@@ -261,6 +304,61 @@ void loop() {
     float gyroX = myIMU.getGyroX();
     float gyroY = myIMU.getGyroY();
     float gyroZ = myIMU.getGyroZ();
+
+    // float acc_mag = sqrt(accX*accX+accY*accY+accZ*accZ);
+    // float acc_mag = sqrt(accX*accX+accY*accY+accZ*accZ);
+    // float acc_high_filt = abs(hfilt.filter(acc_mag));
+
+    // Serial.println(acc_mag, 8);
+
+    // Serial.println(acc_high_filt, 8);
+    
+    // float acc_low_filt = lfilt.filter(acc_high_filt);
+    // bool movement = acc_low_filt > 0.05;
+
+    // Serial.println(acc_low_filt, 8);
+
+    // Serial.println(movement);
+
+    // if(movement) {
+    //   velX = velX + (LaccX * freq) / 1000;
+    //   velY = velY + (LaccY * freq) / 1000;
+    //   velZ = velZ + (LaccZ * freq) / 1000;
+
+      // Serial.println(velX);
+      // Serial.println(velY);
+      // Serial.println(velZ);
+
+      // Serial.println("After");
+
+      // velX = velXfilt.filter(velX);
+      // velY = velYfilt.filter(velY);
+      // velZ = velZfilt.filter(velZ);
+
+      // Serial.println(velX);
+      // Serial.println(velY);
+      // Serial.println(velZ);
+    // } else {
+    //   velX = 0;
+    //   velY = 0;
+    //   velZ = 0;
+    // }
+
+    // float disX = velX * freq / 1000;
+    // float disY = velY * freq / 1000;
+    // float disZ = velZ * freq / 1000;
+
+    // disX += velX * freq / 1000;
+    // disY += velY * freq / 1000;
+    // disZ += velZ * freq / 1000;
+
+    // disX = disXfilt.filter(disX);
+    // disY = disYfilt.filter(disY);
+    // disZ = disZfilt.filter(disZ);
+
+    // Serial.println(disX);
+    // Serial.println(disY);
+    // Serial.println(disZ);
 
 /*
     Serial.print(quatI, 2);
@@ -295,14 +393,81 @@ void loop() {
       //               ",\"batt\":" + batt_v + "}";
 
 
-      // String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v +
-      //               ",\"accX\":" + accX + ",\"accY\":" + accY + ",\"accZ\":" + accZ +
-      //               ",\"gyroX\":" + gyroX + ",\"gyroY\":" + gyroY + ",\"gyroZ\":" + gyroZ + "}";
-
       String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v +
-                    ",\"accX\":" + accX + ",\"accY\":" + accY + ",\"accZ\":" + accZ +
-                    ",\"gyroX\":" + gyroX + ",\"gyroY\":" + gyroY + ",\"gyroZ\":" + gyroZ +
-                    ",\"magX\":" + magX + ",\"magY\":" + magY + ",\"mag\":" + gyroZ + "}";
+                    ",\"accX\":" + accX + ",\"accY\":" + accY + ",\"accZ\":" + accZ + ",\"LaccX\":" + LaccX + ",\"LaccY\":" + LaccY + ",\"LaccZ\":" + LaccZ + "}";
+
+
+      // String url1 = "{\"LaccX\":" + String(LaccX) + ",\"LaccY\":" + LaccY + ",\"LaccZ\":" + LaccZ + "}";
+
+      // String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v +
+      //               ",\"accX\":" + LaccX + ",\"accY\":" + LaccY + ",\"accZ\":" + LaccZ +
+      //               ",\"gyroX\":" + gyroX + ",\"gyroY\":" + gyroY + ",\"gyroZ\":" + gyroZ +
+      //               ",\"magX\":" + magX + ",\"magY\":" + magY + ",\"magZ\":" + magZ + "}";
+
+      // std::stringstream stream;
+      // stream << std::fixed << std::setprecision(6) << gyroX;
+      // std::string strgyroX = stream.str();
+
+      // std::stringstream stream1;
+      // stream1 << std::fixed << std::setprecision(6) << gyroY;
+      // std::string strgyroY = stream1.str();
+
+      // std::stringstream stream2;
+      // stream2 << std::fixed << std::setprecision(6) << gyroZ;
+      // std::string strgyroZ = stream2.str();
+
+      // std::stringstream strea3;
+      // strea3 << std::fixed << std::setprecision(6) << LaccX;
+      // std::string strLaccX = strea3.str();
+
+      // std::stringstream strea4;
+      // strea4 << std::fixed << std::setprecision(6) << LaccY;
+      // std::string strLaccY = strea4.str();
+
+      // std::stringstream stream5;
+      // stream5 << std::fixed << std::setprecision(6) << LaccZ;
+      // std::string strLaccZ = stream5.str();
+
+      // std::stringstream stream6;
+      // stream6 << std::fixed << std::setprecision(6) << accX;
+      // std::string straccX = stream6.str();
+
+      // std::stringstream stream7;
+      // stream7 << std::fixed << std::setprecision(6) << accY;
+      // std::string straccY = stream7.str();
+
+      // std::stringstream stream8;
+      // stream8 << std::fixed << std::setprecision(6) << accZ;
+      // std::string straccZ = stream8.str();
+
+      // std::stringstream stream9;
+      // stream9 << std::fixed << std::setprecision(6) << quatI;
+      // std::string strquatI = stream9.str();
+
+      // std::stringstream stream10;
+      // stream10 << std::fixed << std::setprecision(6) << quatJ;
+      // std::string strquatJ = stream10.str();
+
+      // std::stringstream stream11;
+      // stream11 << std::fixed << std::setprecision(6) << quatK;
+      // std::string strquatK = stream11.str();
+
+      // std::stringstream stream12;
+      // stream12 << std::fixed << std::setprecision(6) << quatReal;
+      // std::string strquatReal = stream12.str();
+
+      // String url = String(packetnum) + "," + strgyroX.c_str() + "," + strgyroY.c_str() + "," + strgyroZ.c_str() + "," + strLaccX.c_str() + "," + strLaccY.c_str() + "," + strLaccZ.c_str() + 
+      // "," + straccX.c_str() + "," + straccY.c_str() + "," + straccZ.c_str() + "," + strquatI.c_str() + "," + strquatJ.c_str() + "," + strquatK.c_str() + "," + strquatReal.c_str() 
+      // + "," + accAccuracy;
+      // packetnum+=1;
+
+
+      //  String url = String(packetnum) +  "," + straccX.c_str() + "," + straccY.c_str() + "," + straccZ.c_str();
+
+      // Serial.println(String(lastTime) + " " + packetnum);
+
+      // String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v +
+      //               ",\"accX\":" + accX + ",\"accY\":" + accY + ",\"accZ\":" + accZ + ",\"movement\":" + movement + "}";
 
       // String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}";
       Serial.println(url);
