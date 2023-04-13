@@ -1,325 +1,167 @@
+// #include <BLEDevice.h>
+// #include <BLEUtils.h>
+// #include <BLEServer.h>
+// #include <BLE2902.h>
+// #include "esp_bt_device.h"
 
+#include <Wire.h>
+#include "SparkFun_BNO080_Arduino_Library.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include "BluetoothSerial.h"
 
-#include <WiFi.h>
-#include <WiFiMulti.h>
-#include <HTTPClient.h>
-#include <WiFiClientSecure.h>
-#include <WebSocketsClient.h> // https://github.com/Links2004/arduinoWebSockets
+// #include <BLESerial.h>
 
-WiFiMulti WiFiMulti;
-WebSocketsClient webSocket;
-
-
-
-#define LILYGO_WATCH_2019_WITH_TOUCH 
+#define LILYGO_WATCH_2019_WITH_TOUCH
 #include <LilyGoWatch.h>
 TTGOClass *watch;
 TFT_eSPI *tft;
 
+// BLESerial bleSerial;
 
-#include <Wire.h>
+// #define bleeSerial bleSerial
 
+BluetoothSerial SerialBT;
 
-#include "SparkFun_BNO080_Arduino_Library.h" // Click here to get the library: http://librarymanager/All#SparkFun_BNO080
 BNO080 myIMU;
 
-// ID wifi to connect to 
-const char* ssid = "mesquiteMocap";
-const char* password = "movement";
-String serverIP = "mocap.local";
-int sensor_clock = 22; // updated clock - double check your soldering 
-int sensor_data = 21; // this is from the soldering. double check what you have soldered your data to 
+int sensor_clock = 22;
+int sensor_data = 21;
 
-String mac_address; // identifies each seed
-
-
-// the following variables are unsigned longs because the time, measured in
-// milliseconds, will quickly become a bigger number than can be stored in an int.
-unsigned long lastTime = 0;
-// Timer set to 10 minutes (600000)
-//unsigned long timerDelay = 600000;
-// Set timer to 5 seconds (5000)
-unsigned long timerDelay = 10;
-
-String response;
-
-
-void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
-  const uint8_t* src = (const uint8_t*) mem;
-  Serial.printf("\n[HEXDUMP] Address: 0x%08X len: 0x%X (%d)", (ptrdiff_t)src, len, len);
-  for(uint32_t i = 0; i < len; i++) {
-    if(i % cols == 0) {
-      Serial.printf("\n[0x%08X] 0x%08X: ", (ptrdiff_t)src, i);
-    }
-    Serial.printf("%02X ", *src);
-    src++;
-  }
-  Serial.printf("\n");
-}
-
-/*
- * Event handling for the websocket.  
- * This is from WebSocketClient.h 
- */
-
-void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
-  switch(type) {
-    case WStype_DISCONNECTED:  //when disconnected 
-      Serial.printf("[WSc] Disconnected!\n");
-      break;
-    case WStype_CONNECTED: //when connected 
-      Serial.printf("[WSc] Connected to url: %s\n", payload);
-
-      // send message to server when Connected
-      webSocket.sendTXT("Connected"); //validation that you've connected
-      break;
-    case WStype_TEXT: //when you get a message 
-      Serial.printf("[WSc] get text: %s\n", payload);
-
-      // send message to server
-      // webSocket.sendTXT("message here");
-      break;
-    case WStype_BIN:
-      Serial.printf("[WSc] get binary length: %u\n", length);
-      hexdump(payload, length);
-
-      // send data to server
-      // webSocket.sendBIN(payload, length);
-      break;
-    case WStype_ERROR:      
-    case WStype_FRAGMENT_TEXT_START:
-    case WStype_FRAGMENT_BIN_START:
-    case WStype_FRAGMENT:
-    case WStype_FRAGMENT_FIN:
-      break;
-  }
-}
+String mac_address;
 
 float batt_v;
+float quatI, quatJ, quatK, quatReal;
 
-/*
- *  void pressed() handles keeping the screen off unless the second button is pressed. 
- */
+// define two tasks for Blink & AnalogRead
+void TaskBluetooth(void *pvParameters);
+void TaskReadMPU(void *pvParameters);
 
-void pressed()
-{
-       watch->power->adc1Enable(AXP202_VBUS_VOL_ADC1 | AXP202_VBUS_CUR_ADC1 | AXP202_BATT_CUR_ADC1 | AXP202_BATT_VOL_ADC1, true);
-    // get the values
-     float vbus_v = watch->power->getVbusVoltage();
-    float vbus_c = watch->power->getVbusCurrent();
-     batt_v = watch->power->getBattVoltage();
-    int per = watch->power->getBattPercentage();
-         Serial.println(per);
+void pressed() {
+  watch->power->adc1Enable(AXP202_VBUS_VOL_ADC1 | AXP202_VBUS_CUR_ADC1 | AXP202_BATT_CUR_ADC1 | AXP202_BATT_VOL_ADC1, true);
+  float vbus_v = watch->power->getVbusVoltage();
+  float vbus_c = watch->power->getVbusCurrent();
+  batt_v = watch->power->getBattVoltage();
+  int per = watch->power->getBattPercentage();
+  Serial.println(per);
 
-      watch->setBrightness(100);
+  watch->setBrightness(100);
 }
 
 void released()
 {
-        watch->setBrightness(0);
+  watch->setBrightness(0);
 }
-
-/*
- * Initial set up. This will:  
- * 
- * 1. initialize the watch and open ports to receive information. 
- * 2. Connect to Wifi (Wifi.h) 
- * 3. Enable the rotational vector 
- * 4. Get the MAC address for each device for identification purposes. 
- * 5. This will also send time data to the server 
- */
 
 void setup() {
 
-  // Initialize the watch 
-  Serial.begin(115200);
 
-      // Get TTGOClass instance
-    watch = TTGOClass::getWatch();
+  Wire.flush();
+  Wire.begin(sensor_clock, sensor_data);
+  myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
+  watch = TTGOClass::getWatch();
 
-    // Initialize the hardware, the BMA423 sensor has been initialized internally
-    watch->begin();
+  delay(1000);
 
-    // Turn on the backlight
-    watch->openBL();
+  watch->begin();
+  watch->openBL();
+  tft = watch->tft;
+  watch->button->setPressedHandler(pressed);
+  watch->button->setReleasedHandler(released);
 
-
-    //Receive objects for easy writing
-    tft = watch->tft;
-
-
-// This intiliazes the button press handler that we defined earlier 
-   watch->button->setPressedHandler(pressed);
-   watch->button->setReleasedHandler(released);
-
-
-
-  delay(1000); //  Wait for BNO to boot
-  // Start i2c and BNO080
-  Wire.flush();   // Reset I2C
-  delay(100);
-
-      Wire.begin(sensor_clock, sensor_data);
-
-  myIMU.begin(0x4B, Wire);
-
-
-// If there is something wrong with the IMU information, check your soldering 
-   if (myIMU.begin() == false)
-  {
+  if (myIMU.begin() == false) {
     Serial.println("BNO080 not detected at default I2C address. Check your jumpers and the hookup guide. Freezing...");
     while (1);
   }
 
-  Wire.setClock(400000); //Increase I2C data rate to 400kHz
+  Wire.setClock(400000);
 
-  // This is for the IMU information 
-
-  myIMU.enableRotationVector(50); //Send data update every 50ms
+  myIMU.enableRotationVector(10);
+  myIMU.enableAccelerometer(10);
+  myIMU.enableGyro(10);
+  myIMU.enableMagnetometer(10);
 
   Serial.println(F("Rotation vector enabled"));
   Serial.println(F("Output in form i, j, k, real, accuracy"));
 
   delay(500);
-  
-   
-  WiFiMulti.addAP(ssid, password);
 
-  // Connect to the WiFi 
-  
-  Serial.println("Connecting");
+  Serial.begin(115200);
 
-  while(WiFiMulti.run() != WL_CONNECTED) {
-    delay(100);
-    Serial.print(".");
-  }
-  
-  Serial.println("");
-  Serial.print("Connected to WiFi network with IP Address: "); //this will be the local IP 
-  Serial.println(WiFi.localIP());
- 
+  delay(1000);
+
+  SerialBT.begin("MM", true);
+  // bleeSerial.begin("IoT-Bus Bluetooth Serial"); 
+  Serial.println("Bluetooth Serial started");
+
+  // mac_address = BLEDevice::getAddress().toString().c_str();
+  mac_address = "08:3a:f2:44:ca:92";
+
+  delay(500);
   Serial.println("Timer set to 5 seconds (timerDelay variable), it will take 5 seconds before publishing the first reading.");
 
-// The MAC address will identify each individual device 
-  mac_address = WiFi.macAddress();
   Serial.println(mac_address);
-    // Some display settings
+
+  delay(1000);
+
+  xTaskCreatePinnedToCore(
+    TaskBluetooth
+    ,  "TaskBluetooth"   // A name just for humans
+    ,  10000  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  NULL
+    ,  1  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+    ,  NULL 
+    ,  0);
+
+  xTaskCreatePinnedToCore(
+    TaskReadMPU
+    ,  "TaskReadMPU"
+    ,  10000  // Stack size
+    ,  NULL
+    ,  1  // Priority
+    ,  NULL 
+    ,  1);
+}
+
+void loop() {
+  
+}
+
+void IMU_Show() {
+  if (myIMU.dataAvailable() == true) {
+    quatI = myIMU.getQuatI();
+    quatJ = myIMU.getQuatJ();
+    quatK = myIMU.getQuatK();
+    quatReal = myIMU.getQuatReal();
+
     tft->setTextColor(random(0xFFFF));
     String t = sensor_clock + " : " + sensor_data;
     tft->drawString(mac_address,  5, 5, 4);
     tft->setTextFont(4);
-    tft->setTextColor(TFT_WHITE, TFT_BLACK);
-
-    
-  delay(500);
-  // server address, port and URL
-
-
-  webSocket.begin(serverIP, 3000, "/");
-
-  // event handler
-  webSocket.onEvent(webSocketEvent);
-
-  // use HTTP Basic Authorization this is optional remove if not needed
-  // webSocket.setAuthorization("user", "Password");
-
-  // try ever 5000 again if connection has failed
-  webSocket.setReconnectInterval(5000);
-
-    webSocket.sendTXT(String(millis()).c_str());
-
-    watch->setBrightness(0);
-
-  
-}
-
-/*
- * This is the actual code that runs constantly. This will: 
- * 
- * 1. Take the IMU data 
- * 2. Pass it through to the router 
- */
-
-void loop() {
-    watch->button->loop();
-    webSocket.loop();
- if ((millis() - lastTime) > timerDelay) {
-    //Check WiFi connection status
-    if(WiFi.status()== WL_CONNECTED){
-
-
-  if (myIMU.dataAvailable() == true)
-  {
-    float quatI = myIMU.getQuatI();
-    float quatJ = myIMU.getQuatJ();
-    float quatK = myIMU.getQuatK();
-    float quatReal = myIMU.getQuatReal();
-    float quatRadianAccuracy = myIMU.getQuatRadianAccuracy();
-
-/*
-    Serial.print(quatI, 2);
-    Serial.print(F(" "));
-    Serial.print(quatK, 2);
-    Serial.print(F(" "));
-    Serial.print(quatJ, 2);
-    Serial.print(F(" "));
-    Serial.println(quatReal, 2);
-    */
-
-     tft->fillRect(98, 100, 70, 85, TFT_BLACK);
-      tft->setCursor(80, 60);
-      tft->print("Pins: "); tft->print(sensor_clock);tft->print(",");tft->print(sensor_data);
-      tft->setCursor(80, 90);
-      tft->print("X:"); tft->println(quatI);
-      tft->setCursor(80, 120);
-      tft->print("Y:"); tft->println(quatJ);
-      tft->setCursor(80, 150);
-      tft->print("Z:"); tft->println(quatK);
-      tft->setCursor(80, 180);
-      tft->print("W:"); tft->println(quatReal);
-      tft->setCursor(80, 210);
-      // tft->print("batt:"); tft->println(batt_v);
-
-      //send to server 
-
-      String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + ",\"batt\":" + batt_v + "}"; 
-      //Serial.println(url);
-      webSocket.sendTXT(url.c_str());
-
-  }
-  
-
-
-    }
-    else {
-      Serial.println("WiFi Disconnected");
-    }
-    lastTime = millis();
   }
 }
 
-String httpGETRequest(const char* serverName) {
-  HTTPClient http;
-    
-  // Your IP address with path or Domain name with URL path 
-  http.begin(serverName);
-  
-  // Send HTTP POST request
-  int httpResponseCode = http.GET();
-  
-  String payload = "{}"; 
-  
-  if (httpResponseCode>0) {
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-    payload = http.getString();
-  }
-  else {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  }
-  // Free resources
-  http.end();
+void TaskBluetooth(void *pvParameters) {
+  for (;;) {
+    String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + "}" + "\n";
+    //Serial.println(url);
 
-  return payload;
+    int len = url.length();
+    uint8_t buf[len + 1];
+    url.getBytes(buf, len + 1);
+    SerialBT.write(buf, len);
+    // SerialBT.println(url);
+  }
+}
+
+void TaskReadMPU(void *pvParameters) {
+    for (;;) {
+      // static uint32_t prev_ms = millis();
+      // if (millis() > (prev_ms + (1000/50))) {
+      //   IMU_Show();
+      //   prev_ms = millis();
+      // }
+      IMU_Show();
+    // vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
+  }
 }
