@@ -133,7 +133,7 @@ void setup() {
   // server address, port and URL
 
 
-  webSocket.begin(serverIP, 3000, "/");
+  webSocket.begin(serverIP, 3000, "/hub");
 
   // event handler
   webSocket.onEvent(webSocketEvent);
@@ -149,6 +149,7 @@ void setup() {
 
 void loop() {
   // if ((millis() - lastTime) > timerDelay) {
+    webSocket.loop();
     if (myIMU.dataAvailable() == true) {
       float quatI = myIMU.getQuatI();
       float quatJ = myIMU.getQuatJ();
@@ -159,5 +160,7 @@ void loop() {
     String url = String(mac_address) + " " + String(quatI) + " " + String(quatJ) + " " + String(quatK) +  " " + String(quatReal);
 
     Serial.println(url);
+
+    webSocket.sendTXT(url.c_str());
   }
 }
