@@ -1,79 +1,99 @@
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEServer.h>
-#include <BLE2902.h>
-#include "esp_bt_device.h"
-
 #define LILYGO_WATCH_2019_WITH_TOUCH
 #include <LilyGoWatch.h>
 TTGOClass *watch;
 TFT_eSPI *tft;
-
-
 #include <Wire.h>
+#include <WiFi.h>
+#include <WiFiMulti.h>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <WebSocketsClient.h> 
 
 #include "SparkFun_BNO080_Arduino_Library.h" // Click here to get the library: https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library
-//#define I2C_BUFFER_LENGTH 128
+#define I2C_BUFFER_LENGTH 128
 
 
 BNO080 myIMU;
 
-int sensor_clock = 22; // updated clock - double check your soldering
-int sensor_data = 21; // this is from the soldering. double check what you have soldered your data to
-
 String mac_address;
+unsigned long lastTime = 0;
+unsigned long timerDelay = 10;
+
+WiFiMulti WiFiMulti;
+WebSocketsClient webSocket;
 
 
-BLEUUID  SERVICE_UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E"); // UART service UUID
-BLEUUID CHARACTERISTIC_UUID ("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
-BLEAdvertising *pAdvertising;
-BLECharacteristic* pCharacteristic;
-#define BLE_NAME "MM"
-
-class MyCallbacks: public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *pChar) {
-    std::string value = pChar->getValue();
-    Serial.print("Received Value: ");
-    Serial.println(value.c_str());
-  }
-};
-
-class ServerCallbacks : public BLEServerCallbacks {
-    void onDisconnect(BLEServer* server) {
-      Serial.print("Disconnected");
-      pAdvertising->start();
-    }
-};
-
+// ID wifi to connect to 
+const char* ssid = "Mesquitemocap";
+const char* password = "movement";
+String serverIP = "mocap.local";
+int sensor_clock = 22; // updated clock - double check your soldering 
+int sensor_data = 21; // this is from the soldering. double check what you have soldered your data to 
 
 float batt_v;
 
-
-void pressed()
-{
-       watch->power->adc1Enable(AXP202_VBUS_VOL_ADC1 | AXP202_VBUS_CUR_ADC1 | AXP202_BATT_CUR_ADC1 | AXP202_BATT_VOL_ADC1, true);
-    // get the values
-     float vbus_v = watch->power->getVbusVoltage();
-    float vbus_c = watch->power->getVbusCurrent();
-     batt_v = watch->power->getBattVoltage();
-    int per = watch->power->getBattPercentage();
-         Serial.println(per);
-
-      watch->setBrightness(100);
+void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
+  const uint8_t* src = (const uint8_t*) mem;
+  Serial.printf("\n[HEXDUMP] Address: 0x%08X len: 0x%X (%d)", (ptrdiff_t)src, len, len);
+  for(uint32_t i = 0; i < len; i++) {
+    if(i % cols == 0) {
+      Serial.printf("\n[0x%08X] 0x%08X: ", (ptrdiff_t)src, i);
+    }
+    Serial.printf("%02X ", *src);
+    src++;
+  }
+  Serial.printf("\n");
 }
 
-void released()
-{
-        watch->setBrightness(0);
+/*
+ * Event handling for the websocket.  
+ * This is from WebSocketClient.h 
+ */
+
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+  switch(type) {
+    case WStype_DISCONNECTED:  //when disconnected 
+      Serial.printf("[WSc] Disconnected!\n");
+      break;
+    case WStype_CONNECTED: //when connected 
+      Serial.printf("[WSc] Connected to url: %s\n", payload);
+
+      // send message to server when Connected
+      webSocket.sendTXT("Connected"); //validation that you've connected
+      break;
+    case WStype_TEXT: //when you get a message 
+      Serial.printf("[WSc] get text: %s\n", payload);
+
+      // send message to server
+      // webSocket.sendTXT("message here");
+      break;
+    case WStype_BIN:
+      Serial.printf("[WSc] get binary length: %u\n", length);
+      hexdump(payload, length);
+
+      // send data to server
+      // webSocket.sendBIN(payload, length);
+      break;
+    case WStype_ERROR:      
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
+      break;
+  }
 }
 
 void setup() {
+    // Initialize the watch
+  Serial.begin(115200);
 
   delay(1000);
   
   Wire.flush();
   //delay(100);
   Wire.begin(sensor_clock, sensor_data);
+  // Wire.setClock(1000000);
+
   myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
 
   if (myIMU.begin() == false) {
@@ -83,66 +103,61 @@ void setup() {
 
   Wire.setClock(400000);
 
-  myIMU.enableRotationVector(10);
-  myIMU.enableAccelerometer(10);
-  myIMU.enableGyro(10);
-  myIMU.enableMagnetometer(10);
+  myIMU.enableRotationVector(50);
+  myIMU.enableAccelerometer(50);
+  myIMU.enableGyro(50);
+  myIMU.enableMagnetometer(50);
 
   Serial.println(F("Rotation vector enabled"));
   Serial.println(F("Output in form i, j, k, real, accuracy"));
 
   delay(500);
 
-  // Initialize the watch
-  Serial.begin(115200);
+  WiFiMulti.addAP(ssid, password);
 
-  BLEDevice::init(BLE_NAME);
-  BLEServer *pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new ServerCallbacks());
+  Serial.println("Connecting");
 
-  BLEService *pService = pServer->createService(SERVICE_UUID);
-
-  pCharacteristic = pService->createCharacteristic(
-                                        CHARACTERISTIC_UUID,
-                                        BLECharacteristic::PROPERTY_READ |
-                                        BLECharacteristic::PROPERTY_WRITE |
-                                        BLECharacteristic::PROPERTY_NOTIFY
-                                      );
-
-  pCharacteristic->setCallbacks(new MyCallbacks());
+  while(WiFiMulti.run() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+  }
   
-  pCharacteristic->addDescriptor(new BLE2902());
+  Serial.println("");
+  Serial.print("Connected to WiFi network with IP Address: "); //this will be the local IP 
+  Serial.println(WiFi.localIP());
 
-  mac_address = BLEDevice::getAddress().toString().c_str();
-
-  esp_ble_gap_set_device_name(("MM-" + mac_address).c_str());
-  esp_bt_dev_set_device_name(("MM-" + mac_address).c_str());
-
-  pService->start();
-
-  pAdvertising = pServer->getAdvertising();
-  pAdvertising->start();
+  mac_address = WiFi.macAddress();
+  Serial.println(mac_address);
 
   delay(500);
-  Serial.println("Timer set to 5 seconds (timerDelay variable), it will take 5 seconds before publishing the first reading.");
+  // server address, port and URL
 
-  Serial.println(mac_address);
-  
-  delay(1000);
+
+  webSocket.begin(serverIP, 3000, "/");
+
+  // event handler
+  webSocket.onEvent(webSocketEvent);
+
+  // use HTTP Basic Authorization this is optional remove if not needed
+  // webSocket.setAuthorization("user", "Password");
+
+  // try ever 5000 again if connection has failed
+  webSocket.setReconnectInterval(5000);
+  webSocket.sendTXT(String(millis()).c_str());
+
 }
 
 void loop() {
-  if (myIMU.dataAvailable() == true)
-  {
-    float quatI = myIMU.getQuatI();
-    float quatJ = myIMU.getQuatJ();
-    float quatK = myIMU.getQuatK();
-    float quatReal = myIMU.getQuatReal();
+  // if ((millis() - lastTime) > timerDelay) {
+    if (myIMU.dataAvailable() == true) {
+      float quatI = myIMU.getQuatI();
+      float quatJ = myIMU.getQuatJ();
+      float quatK = myIMU.getQuatK();
+      float quatReal = myIMU.getQuatReal();
 
-    String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + "}";
+
+    String url = String(mac_address) + " " + String(quatI) + " " + String(quatJ) + " " + String(quatK) +  " " + String(quatReal);
 
     Serial.println(url);
-    pCharacteristic->setValue(url.c_str());
-    pCharacteristic->notify();
   }
 }
