@@ -155,9 +155,10 @@ void loop() {
       float quatJ = myIMU.getQuatJ();
       float quatK = myIMU.getQuatK();
       float quatReal = myIMU.getQuatReal();
+      
+      batt_v = analogRead(A0);
 
-
-    String url = String(mac_address) + " " + String(quatI) + " " + String(quatJ) + " " + String(quatK) +  " " + String(quatReal);
+    String url = String(mac_address) + " " + String(quatI) + " " + String(quatJ) + " " + String(quatK) +  " " + String(quatReal) + " " + String(batt_v);
 
     Serial.println(url);
 
