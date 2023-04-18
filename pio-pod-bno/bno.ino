@@ -17,14 +17,14 @@ BNO080 myIMU;
 
 String mac_address;
 unsigned long lastTime = 0;
-unsigned long timerDelay = 10;
+unsigned long timerDelay = 1000/30;
 
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
 
 // ID wifi to connect to 
-const char* ssid = "Mesquitemocap";
+const char* ssid = "mesquiteMocap";
 const char* password = "movement";
 String serverIP = "mocap.local";
 int sensor_clock = 22; // updated clock - double check your soldering 
@@ -57,20 +57,18 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       break;
     case WStype_CONNECTED: //when connected 
       Serial.printf("[WSc] Connected to url: %s\n", payload);
-
       // send message to server when Connected
       webSocket.sendTXT("Connected"); //validation that you've connected
+      webSocket.enableHeartbeat(1000, 100, 100);
       break;
     case WStype_TEXT: //when you get a message 
       Serial.printf("[WSc] get text: %s\n", payload);
-
       // send message to server
       // webSocket.sendTXT("message here");
       break;
     case WStype_BIN:
       Serial.printf("[WSc] get binary length: %u\n", length);
       hexdump(payload, length);
-
       // send data to server
       // webSocket.sendBIN(payload, length);
       break;
@@ -144,7 +142,6 @@ void setup() {
   // try ever 5000 again if connection has failed
   webSocket.setReconnectInterval(5000);
   webSocket.sendTXT(String(millis()).c_str());
-
 }
 
 void loop() {
@@ -156,12 +153,16 @@ void loop() {
       float quatK = myIMU.getQuatK();
       float quatReal = myIMU.getQuatReal();
       
-      batt_v = analogRead(A0);
-
-    String url = String(mac_address) + " " + String(quatI) + " " + String(quatJ) + " " + String(quatK) +  " " + String(quatReal) + " " + String(batt_v);
+    //   batt_v = analogRead(A0);
+    
+    String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + "}";
+    // String url = String(mac_address) + " " + String(quatI) + " " + String(quatJ) + " " + String(quatK) +  " " + String(quatReal) + " " + String(batt_v);
 
     Serial.println(url);
 
-    webSocket.sendTXT(url.c_str());
+   if ((millis() - lastTime) > timerDelay) {
+        webSocket.sendTXT(url.c_str());
+        lastTime = millis();
+    }
   }
 }
