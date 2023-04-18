@@ -31,6 +31,7 @@ int sensor_clock = 22; // updated clock - double check your soldering
 int sensor_data = 21; // this is from the soldering. double check what you have soldered your data to 
 
 float batt_v;
+float quatI, quatJ, quatK, quatReal;
 
 void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
   const uint8_t* src = (const uint8_t*) mem;
@@ -148,21 +149,23 @@ void loop() {
   // if ((millis() - lastTime) > timerDelay) {
     webSocket.loop();
     if (myIMU.dataAvailable() == true) {
-      float quatI = myIMU.getQuatI();
-      float quatJ = myIMU.getQuatJ();
-      float quatK = myIMU.getQuatK();
-      float quatReal = myIMU.getQuatReal();
+      quatI = myIMU.getQuatI();
+      quatJ = myIMU.getQuatJ();
+      quatK = myIMU.getQuatK();
+      quatReal = myIMU.getQuatReal();
       
     //   batt_v = analogRead(A0);
     
-    String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + "}";
+    // String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + "}";
     // String url = String(mac_address) + " " + String(quatI) + " " + String(quatJ) + " " + String(quatK) +  " " + String(quatReal) + " " + String(batt_v);
 
-    Serial.println(url);
+    // Serial.println(url);
+  }
 
-   if ((millis() - lastTime) > timerDelay) {
-        webSocket.sendTXT(url.c_str());
-        lastTime = millis();
-    }
+  if ((millis() - lastTime) > timerDelay) {
+    String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quatI + ",\"y\":" + quatJ + ",\"z\":" + quatK +  ",\"w\":" + quatReal + "}";
+    Serial.println(url);
+    webSocket.sendTXT(url.c_str());
+    lastTime = millis();
   }
 }
