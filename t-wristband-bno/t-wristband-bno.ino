@@ -27,8 +27,8 @@ WebSocketsClient webSocket;
 const char* ssid = "mesquiteMocap";
 const char* password = "movement";
 String serverIP = "mocap.local";
-int sensor_clock = 22; // updated clock - double check your soldering 
-int sensor_data = 21; // this is from the soldering. double check what you have soldered your data to 
+int sensor_clock = 15; // updated clock - double check your soldering 
+int sensor_data = 13; // this is from the soldering. double check what you have soldered your data to 
 
 float batt_v;
 float quatI, quatJ, quatK, quatReal;
@@ -93,7 +93,7 @@ void setup() {
   Wire.begin(sensor_clock, sensor_data);
   // Wire.setClock(1000000);
 
-  myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
+  myIMU.begin(0x4B, Wire);
 
   if (myIMU.begin() == false) {
     Serial.println("BNO080 not detected at default I2C address. Check your jumpers and the hookup guide. Freezing...");

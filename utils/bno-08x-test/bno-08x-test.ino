@@ -25,8 +25,9 @@ void setup() {
   delay(100); //  Wait for BNO to boot
   // Start i2c and BNO080
   Wire.flush();   // Reset I2C
-  myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
-  Wire.begin(22, 21);
+    Wire.begin(22, 21);
+
+  myIMU.begin(0x4A, Wire);
 
    if (myIMU.begin() == false)
   {
