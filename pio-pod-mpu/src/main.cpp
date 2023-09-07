@@ -1,7 +1,7 @@
 #include "MPU9250.h"
 #include "ttgo.h"
 #include <TFT_eSPI.h>
-#include <pcf8563.h>
+//#include "pcf8563.h"
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
@@ -10,9 +10,10 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+
 MPU9250 mpu;
 TFT_eSPI tft = TFT_eSPI(); 
-PCF8563_Class rtc; 
+//PCF8563_Class rtc; 
 boolean start=false;
 
 BLECharacteristic* pCharacteristic;
@@ -237,8 +238,8 @@ void loop() {
         mpu.sleep(true);
         Serial.println("Go to Sleep");
         delay(3000);
-        tft.writecommand(ST7735_SLPIN);
-        tft.writecommand(ST7735_DISPOFF);
+        //tft.writecommand(ST7735_SLPIN);
+        //tft.writecommand(ST7735_DISPOFF);
         esp_sleep_enable_ext1_wakeup(GPIO_SEL_33, ESP_EXT1_WAKEUP_ANY_HIGH);
         esp_deep_sleep_start();
 
@@ -320,23 +321,6 @@ void loop() {
 //   }
 // }
 
-void IMU_Show() {
-  if (mpu.update()) {
-    // static uint32_t prev_ms = millis();
-    // if (millis() > prev_ms + 50) {
-    //     print_roll_pitch_yaw();
-    //     prev_ms = millis();
-    // }
-    print_roll_pitch_yaw();
-    quat.x = mpu.getQuaternionX();
-    quat.y = mpu.getQuaternionY();
-    quat.z = mpu.getQuaternionZ();
-    quat.w = mpu.getQuaternionW();
-    euler.x = mpu.getEulerX();
-    euler.y = mpu.getEulerY();
-    euler.z = mpu.getEulerZ();
-  }
-}
 
 void print_roll_pitch_yaw() {    
     //tft.setTextColor(TFT_GREEN, TFT_BLACK);
@@ -383,6 +367,25 @@ void print_calibration() {
     Serial.print(", ");
     Serial.print(mpu.getMagScaleZ());
     Serial.println();
+}
+
+
+void IMU_Show() {
+  if (mpu.update()) {
+    // static uint32_t prev_ms = millis();
+    // if (millis() > prev_ms + 50) {
+    //     print_roll_pitch_yaw();
+    //     prev_ms = millis();
+    // }
+    print_roll_pitch_yaw();
+    quat.x = mpu.getQuaternionX();
+    quat.y = mpu.getQuaternionY();
+    quat.z = mpu.getQuaternionZ();
+    quat.w = mpu.getQuaternionW();
+    euler.x = mpu.getEulerX();
+    euler.y = mpu.getEulerY();
+    euler.z = mpu.getEulerZ();
+  }
 }
 
 void TaskBluetooth(void *pvParameters) {
