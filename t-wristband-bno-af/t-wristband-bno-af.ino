@@ -16,8 +16,8 @@
 // but not for I2C or UART
 #define BNO08X_RESET -1
 
-#define I2C_SDA_PIN 15
-#define I2C_SCL_PIN 13
+#define I2C_SDA_PIN 25
+#define I2C_SCL_PIN 26
 
 
 struct euler_t {
@@ -25,6 +25,13 @@ struct euler_t {
   float pitch;
   float roll;
 } ypr;
+
+struct quat_t {
+  float real;
+  float i;
+  float j;
+  float k;
+} quat;
 
 Adafruit_BNO08x  bno08x;
 sh2_SensorValue_t sensorValue;
@@ -77,6 +84,7 @@ void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t* ypr, boo
     float sqj = sq(qj);
     float sqk = sq(qk);
 
+
     ypr->yaw = atan2(2.0 * (qi * qj + qk * qr), (sqi - sqj - sqk + sqr));
     ypr->pitch = asin(-2.0 * (qi * qk - qj * qr) / (sqi + sqj + sqk + sqr));
     ypr->roll = atan2(2.0 * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr));
@@ -88,12 +96,28 @@ void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t* ypr, boo
     }
 }
 
+
+void saveQuatA(sh2_RotationVectorWAcc_t* rotational_vector, quat_t* q) {
+    q->real = rotational_vector->real;
+    q->i = rotational_vector->i;
+    q->j = rotational_vector->j;
+    q->k = rotational_vector->k;
+}
+
+void saveQuatG(sh2_GyroIntegratedRV_t* rotational_vector, quat_t* q) {
+    q->real = rotational_vector->real;
+    q->i = rotational_vector->i;
+    q->j = rotational_vector->j;
+    q->k = rotational_vector->k;
+}
+
 void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, euler_t* ypr, bool degrees = false) {
     quaternionToEuler(rotational_vector->real, rotational_vector->i, rotational_vector->j, rotational_vector->k, ypr, degrees);
 }
 
 void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, euler_t* ypr, bool degrees = false) {
     quaternionToEuler(rotational_vector->real, rotational_vector->i, rotational_vector->j, rotational_vector->k, ypr, degrees);
+
 }
 
 void loop() {
@@ -108,19 +132,24 @@ void loop() {
     switch (sensorValue.sensorId) {
       case SH2_ARVR_STABILIZED_RV:
         quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &ypr, true);
+        saveQuatA(&sensorValue.un.arvrStabilizedRV, &quat);
       case SH2_GYRO_INTEGRATED_RV:
         // faster (more noise?)
         quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &ypr, true);
+        saveQuatG(&sensorValue.un.gyroIntegratedRV, &quat);
         break;
     }
     static long last = 0;
     long now = micros();
-    Serial.print(now - last);             Serial.print("\t");
     last = now;
-    Serial.print(sensorValue.status);     Serial.print("\t");  // This is accuracy in the range of 0 to 3
-    Serial.print(ypr.yaw);                Serial.print("\t");
-    Serial.print(ypr.pitch);              Serial.print("\t");
-    Serial.println(ypr.roll);
+    Serial.print(quat.real);     Serial.print("\t");  // This is accuracy in the range of 0 to 3
+    Serial.print(quat.i);                Serial.print("\t");
+    Serial.print(quat.j);                Serial.print("\t");
+    Serial.print(quat.k);                Serial.print("\t");
+    Serial.print(now - last);             Serial.print("\t");
+    Serial.println(sensorValue.status);
+
+  
   }
 
 }
