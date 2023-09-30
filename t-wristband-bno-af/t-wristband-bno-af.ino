@@ -143,10 +143,10 @@ void loop() {
     long now = micros();
     long x = now - last;
     last = now;
-    Serial.print(quat.i);     Serial.print("\t");  // This is accuracy in the range of 0 to 3
-    Serial.print(quat.j);                Serial.print("\t");
-    Serial.print(quat.k);                Serial.print("\t");
-    Serial.print(quat.real);                Serial.print("\t");
+    Serial.print(quat.i);     Serial.print(" ");  // This is accuracy in the range of 0 to 3
+    Serial.print(quat.j);                Serial.print(" ");
+    Serial.print(quat.k);                Serial.print(" ");
+    Serial.print(quat.real);                Serial.print(" ");
     //Serial.print(x);             Serial.print("\t");
     //Serial.print(sensorValue.status);
     Serial.println();
