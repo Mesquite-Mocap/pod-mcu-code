@@ -131,22 +131,23 @@ void loop() {
     // in this demo only one report type will be received depending on FAST_MODE define (above)
     switch (sensorValue.sensorId) {
       case SH2_ARVR_STABILIZED_RV:
-        quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &ypr, true);
+        //quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &ypr, true);
         saveQuatA(&sensorValue.un.arvrStabilizedRV, &quat);
       case SH2_GYRO_INTEGRATED_RV:
         // faster (more noise?)
-        quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &ypr, true);
+        //quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &ypr, true);
         saveQuatG(&sensorValue.un.gyroIntegratedRV, &quat);
         break;
     }
     static long last = 0;
     long now = micros();
+    long x = now - last;
     last = now;
     Serial.print(quat.real);     Serial.print("\t");  // This is accuracy in the range of 0 to 3
     Serial.print(quat.i);                Serial.print("\t");
     Serial.print(quat.j);                Serial.print("\t");
     Serial.print(quat.k);                Serial.print("\t");
-    Serial.print(now - last);             Serial.print("\t");
+    Serial.print(x);             Serial.print("\t");
     Serial.println(sensorValue.status);
 
   
