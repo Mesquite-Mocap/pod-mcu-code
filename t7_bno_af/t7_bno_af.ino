@@ -159,7 +159,7 @@ void setup(void) {
   // webSocket.setAuthorization("user", "Password");
 
   // try ever 5000 again if connection has failed
-  webSocket.setReconnectInterval(50);
+  webSocket.setReconnectInterval(0);
   webSocket.sendTXT(String(millis()).c_str());
 }
 
@@ -241,6 +241,7 @@ void loop() {
     Serial.println(url);
     webSocket.sendTXT(url.c_str());
     lastTime = millis();
+    webSocket.loop(); // !important
     }
 
 }
