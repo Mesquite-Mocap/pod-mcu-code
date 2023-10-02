@@ -9,8 +9,8 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 
 // ID wifi to connect to 
-const char* ssid = "NETGEAR31";
-const char* password = "fluffywind2904";
+const char* ssid = "ame494";
+const char* password = "12345678";
 
 
 void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
@@ -42,7 +42,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             }
             break;
         case WStype_TEXT:
-            Serial.printf("[%u] get Text: %s\n", num, payload);
+            Serial.printf("%s\n", payload);
 
             // send message to client
             // webSocket.sendTXT(num, "message here");
@@ -87,6 +87,7 @@ void setup() {
     WiFiMulti.addAP(ssid, password);
 
     while(WiFiMulti.run() != WL_CONNECTED) {
+      Serial.print(".");
         delay(100);
     }
 

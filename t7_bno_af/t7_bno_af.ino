@@ -18,9 +18,9 @@ WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
 // ID wifi to connect to 
-const char* ssid = "NETGEAR31";
-const char* password = "fluffywind2904";
-String serverIP = "192.168.0.174";
+const char* ssid = "ame494";
+const char* password = "12345678";
+String serverIP = "192.168.5.161";
 
 struct euler_t {
   float yaw;
@@ -150,7 +150,7 @@ void setup(void) {
   // server address, port and URL
 
 
-  webSocket.begin(serverIP, 3000, "/hub");
+  webSocket.begin(serverIP, 81, "/");
 
   // event handler
   webSocket.onEvent(webSocketEvent);
