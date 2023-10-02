@@ -212,7 +212,6 @@ void loop() {
     Serial.print("sensor was reset ");
     setReports(reportType, reportIntervalUs);
   }
-    if ((millis() - lastTime) > timerDelay) {
   if (bno08x.getSensorEvent(&sensorValue)) {
     // in this demo only one report type will be received depending on FAST_MODE define (above)
     switch (sensorValue.sensorId) {
@@ -225,11 +224,12 @@ void loop() {
         saveQuatG(&sensorValue.un.gyroIntegratedRV, &quat);
         break;
     }
+        /*
+
     static long last = 0;
     long now = micros();
     long x = now - last;
     last = now;
-    /*
     Serial.print(quat.i);     Serial.print(" ");  // This is accuracy in the range of 0 to 3
     Serial.print(quat.j);                Serial.print(" ");
     Serial.print(quat.k);                Serial.print(" ");
@@ -239,11 +239,13 @@ void loop() {
     Serial.println();
     */
   }
+      if ((millis() - lastTime) > timerDelay) {
+    webSocket.loop(); // !important
+
       String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quat.i + ",\"y\":" + quat.j + ",\"z\":" + quat.k +  ",\"w\":" + quat.real + "}";
     Serial.println(url);
     webSocket.sendTXT(url.c_str());
     lastTime = millis();
-    webSocket.loop(); // !important
     }
 
 }
