@@ -2,6 +2,9 @@
 
 
 #include <Wire.h>
+#include "esp_adc_cal.h"
+#define BAT_ADC    2
+float Voltage = 0.0;
 
 #include "SparkFun_BNO080_Arduino_Library.h" // Click here to get the library: http://librarymanager/All#SparkFun_BNO080
 BNO080 myIMU;
@@ -25,9 +28,9 @@ void setup() {
   delay(100); //  Wait for BNO to boot
   // Start i2c and BNO080
   Wire.flush();   // Reset I2C
-    Wire.begin(15, 13);
+    Wire.begin(9, 8);
 
-  myIMU.begin(0x4B, Wire);
+  myIMU.begin(0x4B, Wire); // 0x4A, 0x4B
 
    if (myIMU.begin() == false)
   {
@@ -60,7 +63,18 @@ void loop() {
     Serial.print(F(" "));
     Serial.print(quatJ, 2);
     Serial.print(F(" "));
-    Serial.println(quatReal, 2);
+    Serial.print(quatReal, 2);
+
+        Voltage = (readADC_Cal(analogRead(BAT_ADC))) * 2;
+    Serial.printf(" %.2fV\n", Voltage / 1000.0); 
 
   }
+}
+
+uint32_t readADC_Cal(int ADC_Raw)
+{
+    esp_adc_cal_characteristics_t adc_chars;
+
+    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
+    return (esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
 }
