@@ -20,8 +20,8 @@ WebSocketsClient webSocket;
 
 
 // ID wifi to connect to
-const char *ssid = "NETGEAR31";
-const char *password = "fluffywind2904";
+const char *ssid = "ame494";
+const char *password = "12345678";
 String serverIP = "mocap.local";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
@@ -131,31 +131,7 @@ void TaskReadIMU(void *pvParameters);
 void setup() {
 
   Serial.begin(115200);
-
-  delay(1000);
-
-  Wire.flush();
-  //delay(100);
-  Wire.begin(sensor_clock, sensor_data);
-  // Wire.setClock(1000000);
-
-  myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
-
-  if (myIMU.begin() == false) {
-    Serial.println("BNO080 not detected at default I2C address. Check your jumpers and the hookup guide. Freezing...");
-    while (1)
-      ;
-  }
-
-  Wire.setClock(400000);
-
-  myIMU.enableRotationVector(50);
-  myIMU.enableAccelerometer(50);
-  myIMU.enableGyro(50);
-  myIMU.enableMagnetometer(50);
-
-  Serial.println(F("Rotation vector enabled"));
-
+  delay(500);
 
 
   WiFiMulti.addAP(ssid, password);
@@ -174,7 +150,47 @@ void setup() {
   mac_address = WiFi.macAddress();
   Serial.println(mac_address);
 
+
+  delay(100);
+
+  Wire.flush();
+  delay(100);
+  Wire.begin(sensor_clock, sensor_data);
+  // Wire.setClock(1000000);
+
+  myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
+
+  if (myIMU.begin() == false) {
+    Serial.println("BNO080 not detected at default I2C address. Check your jumpers and the hookup guide. Freezing...");
+    while (1)
+      ;
+  }
+
+  Wire.setClock(400000);
+
+  myIMU.enableRotationVector(50);
+  myIMU.enableAccelerometer(50);
+  myIMU.enableGyro(50);
+  myIMU.enableMagnetometer(50);
+
+  Serial.println(F("IMU enabled"));
+
+
+
   delay(500);
+
+  webSocket.begin(serverIP, 3000, "/hub");
+
+  // event handler
+  webSocket.onEvent(webSocketEvent);
+
+  // use HTTP Basic Authorization this is optional remove if not needed
+  // webSocket.setAuthorization("user", "Password");
+
+  // try ever 5000 again if connection has failed
+  webSocket.setReconnectInterval(0);
+  webSocket.sendTXT(String(millis()).c_str());
+
 
   xTaskCreatePinnedToCore(
     TaskWifi, "TaskWifi"  // A name just for humans
@@ -201,27 +217,29 @@ void TaskWifi(void *pvParameters) {
 
   for (;;) {
     webSocket.loop();
-    String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quat.x + ",\"y\":" + quat.y + ",\"z\":" + quat.z + ",\"w\":" + quat.w + "}";
-    // String url = String(mpu.getGyroX()) + "," + mpu.getGyroY() + "," + mpu.getGyroZ() + "," + mpu.getAccX() + "," + mpu.getAccY() + "," + mpu.getAccZ() + "," + mpu.getMagX() + "," + mpu.getMagY() + "," + mpu.getMagZ();
-    Serial.println(url);
+    static uint32_t prev_ms = millis();
+    if (millis() > (prev_ms + (1000 / 50))) {
+      String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quat.x + ",\"y\":" + quat.y + ",\"z\":" + quat.z + ",\"w\":" + quat.w + "}";
+      // String url = String(mpu.getGyroX()) + "," + mpu.getGyroY() + "," + mpu.getGyroZ() + "," + mpu.getAccX() + "," + mpu.getAccY() + "," + mpu.getAccZ() + "," + mpu.getMagX() + "," + mpu.getMagY() + "," + mpu.getMagZ();
+      Serial.println(url);
 
-    webSocket.sendTXT(url.c_str());
+      webSocket.sendTXT(url.c_str());
+      prev_ms = millis();
+    }
     // vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
   }
 }
 
 void TaskReadIMU(void *pvParameters) {
   for (;;) {
-    static uint32_t prev_ms = millis();
-    if (millis() > (prev_ms + (1000 / 50))) {
-      if (myIMU.dataAvailable() == true) {
-        quat.x = myIMU.getQuatI();
-        quat.y = myIMU.getQuatJ();
-        quat.z = myIMU.getQuatK();
-        quat.w = myIMU.getQuatReal();
-      }
-      prev_ms = millis();
+
+    if (myIMU.dataAvailable() == true) {
+      quat.x = myIMU.getQuatI();
+      quat.y = myIMU.getQuatJ();
+      quat.z = myIMU.getQuatK();
+      quat.w = myIMU.getQuatReal();
     }
+
 
 
     // vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
