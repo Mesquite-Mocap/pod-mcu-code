@@ -18,6 +18,9 @@ unsigned long timerDelay = 1000 / 30;
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
+int fps = 120;
+int port = 3000;
+
 
 // ID wifi to connect to
 const char *ssid = "ame494";
@@ -179,7 +182,7 @@ void setup() {
 
   delay(500);
 
-  webSocket.begin(serverIP, 3000, "/hub");
+  webSocket.begin(serverIP, port, "/hub");
 
   // event handler
   webSocket.onEvent(webSocketEvent);
@@ -218,7 +221,7 @@ void TaskWifi(void *pvParameters) {
   for (;;) {
     webSocket.loop();
     static uint32_t prev_ms = millis();
-    if (millis() > (prev_ms + (1000 / 50))) {
+    if (millis() > (prev_ms + (1000 / fps))) {
       String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quat.x + ",\"y\":" + quat.y + ",\"z\":" + quat.z + ",\"w\":" + quat.w + "}";
       // String url = String(mpu.getGyroX()) + "," + mpu.getGyroY() + "," + mpu.getGyroZ() + "," + mpu.getAccX() + "," + mpu.getAccY() + "," + mpu.getAccZ() + "," + mpu.getMagX() + "," + mpu.getMagY() + "," + mpu.getMagZ();
       Serial.println(url);
