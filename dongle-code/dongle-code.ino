@@ -3,9 +3,10 @@
 #include <WiFiMulti.h>
 #include <WiFiClientSecure.h>
 #include <WebSocketsServer.h>
+#include <ESPmDNS.h>
 
 WiFiMulti WiFiMulti;
-WebSocketsServer webSocket = WebSocketsServer(81);
+WebSocketsServer webSocket = WebSocketsServer(80);
 
 
 // ID wifi to connect to 
@@ -74,16 +75,6 @@ void setup() {
     delay(100);
     //Serial.setDebugOutput(true);
 
-    Serial.println("here...");
-    Serial.println();
-    Serial.println();
-
-    for(uint8_t t = 4; t > 0; t--) {
-        Serial.printf("[SETUP] BOOT WAIT %d...\n", t);
-        //Serial.flush();
-        delay(1000);
-    }
-
     WiFiMulti.addAP(ssid, password);
 
     while(WiFiMulti.run() != WL_CONNECTED) {
@@ -95,6 +86,21 @@ void setup() {
 
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
+
+
+        if (!MDNS.begin("mocapsuit.local")) {
+        Serial.println("Error setting up MDNS responder!");
+        while(1) {
+            delay(1000);
+        }
+    }
+    Serial.println("mDNS responder started");
+
+
+
+    // Add service to MDNS-SD
+    MDNS.addService("http", "tcp", 80);
+
 }
 
 void loop() {

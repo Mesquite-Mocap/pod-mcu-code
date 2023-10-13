@@ -18,14 +18,14 @@ unsigned long timerDelay = 1000 / 30;
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-int fps = 120;
-int port = 3000;
+int fps = 500;
+int port = 80;
 
 
 // ID wifi to connect to
 const char *ssid = "ame494";
 const char *password = "12345678";
-String serverIP = "mocap.local";
+String serverIP = "192.168.243.118";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
