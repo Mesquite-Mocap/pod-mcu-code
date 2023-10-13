@@ -22,6 +22,25 @@ int fps = 500;
 int port = 80;
 
 
+// Choose only one!
+String bone = "LeftArm";
+// String bone = "LeftForeArm";
+// String bone = "LeftHand";
+// String bone = "LeftUpLeg";
+// String bone = "LeftLeg";
+// String bone = "RightArm";
+// String bone = "RightForeArm";
+// String bone = "RightHand";
+// String bone = "RightUpLeg";
+// String bone = "RightLeg";
+// String bone = "Spine";
+// String bone = "Chest";
+// String bone = "Neck";
+// String bone = "Head";
+// String bone = "Hips";
+
+
+
 // ID wifi to connect to
 const char *ssid = "ame494";
 const char *password = "12345678";
@@ -222,7 +241,7 @@ void TaskWifi(void *pvParameters) {
     webSocket.loop();
     static uint32_t prev_ms = millis();
     if (millis() > (prev_ms + (1000 / fps))) {
-      String url = "{\"id\": \"" + mac_address + "\",\"x\":" + quat.x + ",\"y\":" + quat.y + ",\"z\":" + quat.z + ",\"w\":" + quat.w + "}";
+      String url = "{\"id\": \"" + mac_address + "\",\"bone\":" + bone + ",\"x\":" + quat.x + ",\"y\":" + quat.y + ",\"z\":" + quat.z + ",\"w\":" + quat.w + "}";
       // String url = String(mpu.getGyroX()) + "," + mpu.getGyroY() + "," + mpu.getGyroZ() + "," + mpu.getAccX() + "," + mpu.getAccY() + "," + mpu.getAccZ() + "," + mpu.getMagX() + "," + mpu.getMagY() + "," + mpu.getMagZ();
       Serial.println(url);
 
