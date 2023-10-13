@@ -241,7 +241,7 @@ void TaskWifi(void *pvParameters) {
     webSocket.loop();
     static uint32_t prev_ms = millis();
     if (millis() > (prev_ms + (1000 / fps))) {
-      String url = "{\"id\": \"" + mac_address + "\",\"bone\":" + bone + ",\"x\":" + quat.x + ",\"y\":" + quat.y + ",\"z\":" + quat.z + ",\"w\":" + quat.w + "}";
+      String url = "{\"id\": \"" + mac_address + "\",\"bone\": \"" + bone + "\",\"x\":" + quat.x + ",\"y\":" + quat.y + ",\"z\":" + quat.z + ",\"w\":" + quat.w + "}";
       // String url = String(mpu.getGyroX()) + "," + mpu.getGyroY() + "," + mpu.getGyroZ() + "," + mpu.getAccX() + "," + mpu.getAccY() + "," + mpu.getAccZ() + "," + mpu.getMagX() + "," + mpu.getMagY() + "," + mpu.getMagZ();
       Serial.println(url);
 
