@@ -18,7 +18,7 @@ unsigned long timerDelay = 1000 / 30;
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-int fps = 500;
+int fps = 60;
 int port = 80;
 
 
@@ -44,7 +44,7 @@ String bone = "LeftArm";
 // ID wifi to connect to
 const char *ssid = "ame494";
 const char *password = "12345678";
-String serverIP = "192.168.243.118";
+String serverIP = "192.168.175.57";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
@@ -242,7 +242,6 @@ void TaskWifi(void *pvParameters) {
     static uint32_t prev_ms = millis();
     if (millis() > (prev_ms + (1000 / fps))) {
       String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + "}";
-      // String url = String(mpu.getGyroX()) + "," + mpu.getGyroY() + "," + mpu.getGyroZ() + "," + mpu.getAccX() + "," + mpu.getAccY() + "," + mpu.getAccZ() + "," + mpu.getMagX() + "," + mpu.getMagY() + "," + mpu.getMagZ();
       Serial.println(url);
 
       webSocket.sendTXT(url.c_str());

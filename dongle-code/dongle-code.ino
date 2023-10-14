@@ -3,7 +3,6 @@
 #include <WiFiMulti.h>
 #include <WiFiClientSecure.h>
 #include <WebSocketsServer.h>
-#include <ESPmDNS.h>
 
 WiFiMulti WiFiMulti;
 WebSocketsServer webSocket = WebSocketsServer(80);
@@ -43,7 +42,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             }
             break;
         case WStype_TEXT:
-            Serial.printf("%s\n", payload);
+            Serial.println(String((char *)payload));
 
             // send message to client
             // webSocket.sendTXT(num, "message here");
@@ -70,7 +69,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 void setup() {
     // Serial.begin(921600);
-    Serial.begin(115200);
+    // Serial.begin(115200);
+    Serial.begin(2000000);
 
     delay(100);
     //Serial.setDebugOutput(true);
@@ -88,18 +88,7 @@ void setup() {
     webSocket.onEvent(webSocketEvent);
 
 
-        if (!MDNS.begin("mocapsuit.local")) {
-        Serial.println("Error setting up MDNS responder!");
-        while(1) {
-            delay(1000);
-        }
-    }
-    Serial.println("mDNS responder started");
 
-
-
-    // Add service to MDNS-SD
-    MDNS.addService("http", "tcp", 80);
 
 }
 
