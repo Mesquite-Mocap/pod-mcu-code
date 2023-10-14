@@ -12,8 +12,6 @@
 BNO080 myIMU;
 
 String mac_address;
-unsigned long lastTime = 0;
-unsigned long timerDelay = 1000 / 30;
 
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
