@@ -16,7 +16,7 @@ String mac_address;
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-int fps = 500;
+int fps = 60;
 int port = 80;
 
 
