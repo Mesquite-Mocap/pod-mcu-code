@@ -18,7 +18,7 @@ unsigned long timerDelay = 1000 / 30;
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-int fps = 60;
+int fps = 500;
 int port = 80;
 
 
