@@ -69,8 +69,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 void setup() {
     // Serial.begin(921600);
-    // Serial.begin(115200);
-    Serial.begin(2000000);
+     Serial.begin(115200);
+    // Serial.begin(2000000);
 
     delay(100);
     //Serial.setDebugOutput(true);
