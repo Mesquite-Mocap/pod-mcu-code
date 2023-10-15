@@ -38,10 +38,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
                 Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
 
 				// send message to client
-				webSocket.sendTXT(num, "Connected");
+			//	webSocket.sendTXT(num, "Connected");
             }
             break;
         case WStype_TEXT:
+            Serial.flush();
             Serial.println(String((char *)payload));
 
             // send message to client
@@ -69,8 +70,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 void setup() {
     // Serial.begin(921600);
-     Serial.begin(115200);
-    // Serial.begin(2000000);
+     //Serial.begin(115200);
+     Serial.begin(2000000);
 
     delay(100);
     //Serial.setDebugOutput(true);

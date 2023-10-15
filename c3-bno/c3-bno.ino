@@ -21,8 +21,8 @@ int port = 80;
 
 
 // Choose only one!
-String bone = "LeftArm";
-// String bone = "LeftForeArm";
+//String bone = "LeftArm";
+ String bone = "LeftForeArm";
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
 // String bone = "LeftLeg";
@@ -42,7 +42,7 @@ String bone = "LeftArm";
 // ID wifi to connect to
 const char *ssid = "ame494";
 const char *password = "12345678";
-String serverIP = "192.168.175.57";
+String serverIP = "192.168.50.57";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
@@ -261,6 +261,6 @@ void TaskReadIMU(void *pvParameters) {
 
 
 
-    // vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
+    vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
   }
 }
