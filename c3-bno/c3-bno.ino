@@ -32,7 +32,6 @@ int port = 80;
 // String bone = "RightUpLeg";
 // String bone = "RightLeg";
 // String bone = "Spine";
-// String bone = "Neck";
 // String bone = "Head";
 // String bone = "Hips";
 
