@@ -32,7 +32,6 @@ int port = 80;
 // String bone = "RightUpLeg";
 // String bone = "RightLeg";
 // String bone = "Spine";
-// String bone = "Chest";
 // String bone = "Neck";
 // String bone = "Head";
 // String bone = "Hips";
@@ -40,9 +39,9 @@ int port = 80;
 
 
 // ID wifi to connect to
-const char *ssid = "ame494";
-const char *password = "12345678";
-String serverIP = "192.168.50.57";
+const char *ssid = "NETGEAR31";
+const char *password = "fluffywind2904";
+String serverIP = "192.168.0.130";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
@@ -238,7 +237,7 @@ void TaskWifi(void *pvParameters) {
   for (;;) {
     webSocket.loop();
     static uint32_t prev_ms = millis();
-    if (millis() > (prev_ms + (1000 / fps))) {
+    if (millis() > (prev_ms + (1000 / (fps+30)))) {
       String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + "}";
       Serial.println(url);
 
@@ -261,6 +260,6 @@ void TaskReadIMU(void *pvParameters) {
 
 
 
-    vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
+    //vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
   }
 }

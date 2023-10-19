@@ -9,8 +9,8 @@ WebSocketsServer webSocket = WebSocketsServer(80);
 
 
 // ID wifi to connect to 
-const char* ssid = "ame494";
-const char* password = "12345678";
+const char* ssid = "mesquiteMocap";
+const char* password = "movement";
 
 
 void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
@@ -42,7 +42,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             }
             break;
         case WStype_TEXT:
-            Serial.flush();
+            //Serial.flush();
             Serial.println(String((char *)payload));
 
             // send message to client
