@@ -220,6 +220,7 @@ void setup() {
     ,
     NULL, 0);
 
+  delay(1000);
   xTaskCreatePinnedToCore(
     TaskReadIMU, "TaskReadIMU", 10000  // Stack size
     ,
@@ -248,6 +249,7 @@ void TaskWifi(void *pvParameters) {
   }
 }
 
+int count = 0;
 void TaskReadIMU(void *pvParameters) {
   for (;;) {
 
@@ -257,7 +259,8 @@ void TaskReadIMU(void *pvParameters) {
       quat.z = myIMU.getQuatK();
       quat.w = myIMU.getQuatReal();
 
-      if(quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0){
+      count++;
+      if(quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0 && count>5000){
         ESP.restart();
       }
     }
