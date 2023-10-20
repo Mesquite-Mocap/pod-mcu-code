@@ -8,6 +8,7 @@ WiFiMulti WiFiMulti;
 WebSocketsServer webSocket = WebSocketsServer(80);
 
 
+
 // ID wifi to connect to 
 const char* ssid = "mesquiteMocap";
 const char* password = "movement";

@@ -16,8 +16,9 @@ String mac_address;
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-int fps = 60;
+int fps = 120;
 int port = 80;
+
 
 
 // Choose only one!
@@ -38,9 +39,9 @@ int port = 80;
 
 
 // ID wifi to connect to
-const char *ssid = "NETGEAR31";
-const char *password = "fluffywind2904";
-String serverIP = "192.168.0.130";
+const char *ssid = "mesquiteMocap";
+const char *password = "movement";
+String serverIP = "192.168.0.50";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
@@ -255,6 +256,10 @@ void TaskReadIMU(void *pvParameters) {
       quat.y = myIMU.getQuatJ();
       quat.z = myIMU.getQuatK();
       quat.w = myIMU.getQuatReal();
+
+      if(quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0){
+        ESP.restart();
+      }
     }
 
 
