@@ -8,6 +8,13 @@
 #include "SparkFun_BNO080_Arduino_Library.h"  // Click here to get the library: https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library
 #define I2C_BUFFER_LENGTH 128
 
+// ID wifi to connect to
+const char *ssid = "elabNet";
+const char *password = "makeSomething";
+String serverIP = "192.168.0.120";
+int sensor_clock = 9;  // updated clock - double check your soldering
+int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
+
 
 BNO080 myIMU;
 
@@ -16,14 +23,17 @@ String mac_address;
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-int fps = 120;
-int port = 80;
+int fps = 30;
+int port = 3000;
+
+float batt_v;
+float quatI, quatJ, quatK, quatReal;
 
 
 
 // Choose only one!
 //String bone = "LeftArm";
- String bone = "LeftForeArm";
+String bone = "LeftForeArm";
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
 // String bone = "LeftLeg";
@@ -38,15 +48,11 @@ int port = 80;
 
 
 
-// ID wifi to connect to
-const char *ssid = "mesquiteMocap";
-const char *password = "movement";
-String serverIP = "192.168.0.50";
-int sensor_clock = 9;  // updated clock - double check your soldering
-int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
-float batt_v;
-float quatI, quatJ, quatK, quatReal;
+
+#include <cppQueue.h>
+
+#define OVERWRITE true
 
 
 boolean start = false;
@@ -58,11 +64,27 @@ struct Quat {
   float z;
   float w;
 } quat;
-struct Euler {
-  float x;
-  float y;
-  float z;
-} euler;
+
+
+
+#define NB_RECS 5
+
+Quat tab[5] = {
+  { 1, 1, 1, 1 },
+  { 2, 1, 1, 1 },
+  { 1, 3, 1, 1 },
+  { 1, 1, 4, 1 },
+  { 1, 1, 1, 5 }
+};
+
+
+cppQueue q(sizeof(Quat), NB_RECS, FIFO, OVERWRITE);
+
+
+
+
+
+
 char buff[256];
 bool rtcIrq = false;
 bool initial = 1;
@@ -81,6 +103,7 @@ bool charge_indication = false;
 
 uint8_t hh, mm, ss;
 int pacnum = 0;
+
 
 
 void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
@@ -146,11 +169,38 @@ void TaskReadIMU(void *pvParameters);
 
 
 
+void checkLocking() {
+
+  Serial.print(quat.w);
+  Serial.print(" ");
+  Serial.print(quat.x);
+  Serial.print(" ");
+  Serial.print(quat.y);
+  Serial.print(" ");
+  Serial.print(quat.z);
+
+  float ax = myIMU.getAccelX();
+  float ay = myIMU.getAccelY();
+  float az = myIMU.getAccelZ();
+
+  Serial.print(" ");
+  Serial.print(ax);
+  Serial.print(" ");
+  Serial.print(ay);
+  Serial.print(" ");
+  Serial.print(az);
+
+
+  Serial.println();
+}
 
 void setup() {
 
   Serial.begin(115200);
   delay(500);
+
+  Serial.println(sizeof(tab));
+
 
 
   WiFiMulti.addAP(ssid, password);
@@ -220,7 +270,7 @@ void setup() {
     ,
     NULL, 0);
 
-  delay(1000);
+  // delay(1000);
   xTaskCreatePinnedToCore(
     TaskReadIMU, "TaskReadIMU", 10000  // Stack size
     ,
@@ -232,24 +282,37 @@ void setup() {
 void loop() {
 }
 
+int count = 0;
+
 
 void TaskWifi(void *pvParameters) {
-
   for (;;) {
     webSocket.loop();
     static uint32_t prev_ms = millis();
-    if (millis() > (prev_ms + (1000 / (fps+30)))) {
+    if (millis() > (prev_ms + (1000 / fps))) {
       String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + "}";
       Serial.println(url);
 
       webSocket.sendTXT(url.c_str());
       prev_ms = millis();
+
+      count++;
+      if (count > 1000) {
+        Serial.println(count);
+        if (quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0) {
+          ESP.restart();
+        }
+        //checkLocking();
+      }
     }
     // vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
   }
 }
 
-int count = 0;
+float ax;
+float ay;
+float az;
+
 void TaskReadIMU(void *pvParameters) {
   for (;;) {
 
@@ -259,10 +322,10 @@ void TaskReadIMU(void *pvParameters) {
       quat.z = myIMU.getQuatK();
       quat.w = myIMU.getQuatReal();
 
-      count++;
-      if(quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0 && count>5000){
-        ESP.restart();
-      }
+
+      ax = myIMU.getAccelX();
+      ay = myIMU.getAccelY();
+      az = myIMU.getAccelZ();
     }
 
 
