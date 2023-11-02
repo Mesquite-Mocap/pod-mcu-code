@@ -8,10 +8,14 @@
 #include "SparkFun_BNO080_Arduino_Library.h"  // Click here to get the library: https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library
 #define I2C_BUFFER_LENGTH 128
 
+#include "esp_adc_cal.h"
+#define BAT_ADC    2
+
+
 // ID wifi to connect to
-const char *ssid = "elabNet";
-const char *password = "makeSomething";
-String serverIP = "192.168.0.120";
+const char *ssid = "mesquiteMocap";
+const char *password = "movement";
+String serverIP = "192.168.1.101";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
@@ -26,7 +30,7 @@ WebSocketsClient webSocket;
 int fps = 30;
 int port = 3000;
 
-float batt_v;
+float batt_v = 0.0;
 float quatI, quatJ, quatK, quatReal;
 
 
@@ -50,10 +54,14 @@ String bone = "LeftForeArm";
 
 
 
-#include <cppQueue.h>
 
-#define OVERWRITE true
+uint32_t readADC_Cal(int ADC_Raw)
+{
+    esp_adc_cal_characteristics_t adc_chars;
 
+    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
+    return (esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
+}
 
 boolean start = false;
 
@@ -68,17 +76,6 @@ struct Quat {
 
 
 #define NB_RECS 5
-
-Quat tab[5] = {
-  { 1, 1, 1, 1 },
-  { 2, 1, 1, 1 },
-  { 1, 3, 1, 1 },
-  { 1, 1, 4, 1 },
-  { 1, 1, 1, 5 }
-};
-
-
-cppQueue q(sizeof(Quat), NB_RECS, FIFO, OVERWRITE);
 
 
 
@@ -199,7 +196,6 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-  Serial.println(sizeof(tab));
 
 
 
@@ -277,6 +273,9 @@ void setup() {
     NULL, 1  // Priority
     ,
     NULL, 1);
+
+    batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
+
 }
 
 void loop() {
@@ -289,15 +288,21 @@ void TaskWifi(void *pvParameters) {
   for (;;) {
     webSocket.loop();
     static uint32_t prev_ms = millis();
+    static uint32_t prev_ms1 = millis();
+    if (millis() > (prev_ms + 1000*60)) {
+      // read battery
+      batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
+    }
+
     if (millis() > (prev_ms + (1000 / fps))) {
-      String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + "}";
+      String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + batt_v + "}";
       Serial.println(url);
 
       webSocket.sendTXT(url.c_str());
       prev_ms = millis();
 
       count++;
-      if (count > 1000) {
+      if (count > 200) {
         Serial.println(count);
         if (quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0) {
           ESP.restart();
@@ -322,10 +327,11 @@ void TaskReadIMU(void *pvParameters) {
       quat.z = myIMU.getQuatK();
       quat.w = myIMU.getQuatReal();
 
-
+/*
       ax = myIMU.getAccelX();
       ay = myIMU.getAccelY();
       az = myIMU.getAccelZ();
+      */
     }
 
 
