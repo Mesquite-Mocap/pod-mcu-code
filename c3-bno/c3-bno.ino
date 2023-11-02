@@ -288,15 +288,9 @@ void TaskWifi(void *pvParameters) {
   for (;;) {
     webSocket.loop();
     static uint32_t prev_ms = millis();
-    static uint32_t prev_ms1 = millis();
-    if (millis() > (prev_ms1 + 1000*60)) {
-      // read battery every minute
-      batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
-      prev_ms1 = millis();
-    }
 
     if (millis() > (prev_ms + (1000 / fps))) {
-      String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + batt_v + "}";
+      String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v/4192) + "}";
       Serial.println(url);
 
       webSocket.sendTXT(url.c_str());
@@ -321,6 +315,13 @@ float az;
 
 void TaskReadIMU(void *pvParameters) {
   for (;;) {
+
+    static uint32_t prev_ms1 = millis();
+    if (millis() > (prev_ms1 + 1000*60)) {
+      // read battery every minute
+      batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
+      prev_ms1 = millis();
+    }
 
     if (myIMU.dataAvailable() == true) {
       quat.x = myIMU.getQuatI();
