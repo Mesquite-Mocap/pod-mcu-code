@@ -289,9 +289,10 @@ void TaskWifi(void *pvParameters) {
     webSocket.loop();
     static uint32_t prev_ms = millis();
     static uint32_t prev_ms1 = millis();
-    if (millis() > (prev_ms + 1000*60)) {
-      // read battery
+    if (millis() > (prev_ms1 + 1000*60)) {
+      // read battery every minute
       batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
+      prev_ms1 = millis();
     }
 
     if (millis() > (prev_ms + (1000 / fps))) {
