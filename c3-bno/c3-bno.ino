@@ -4,12 +4,13 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <WebSocketsClient.h>
+#include <ESPmDNS.h>
 
 #include "SparkFun_BNO080_Arduino_Library.h"  // Click here to get the library: https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library
 #define I2C_BUFFER_LENGTH 128
 
 #include "esp_adc_cal.h"
-#define BAT_ADC    2
+#define BAT_ADC 2
 
 
 // ID wifi to connect to
@@ -27,7 +28,7 @@ String mac_address;
 WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-int fps = 30;
+int fps = 37;
 int port = 80;
 
 float batt_v = 0.0;
@@ -55,12 +56,11 @@ String bone = "Hips";
 
 
 
-uint32_t readADC_Cal(int ADC_Raw)
-{
-    esp_adc_cal_characteristics_t adc_chars;
+uint32_t readADC_Cal(int ADC_Raw) {
+  esp_adc_cal_characteristics_t adc_chars;
 
-    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
-    return (esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
+  esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
+  return (esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
 }
 
 boolean start = false;
@@ -218,10 +218,20 @@ void setup() {
 
   delay(100);
 
+  while (mdns_init() != ESP_OK) {
+    delay(1000);
+    Serial.println("Starting MDNS...");
+  }
+
+
+
+
+
+
+
   Wire.flush();
   delay(100);
   Wire.begin(sensor_clock, sensor_data);
-  // Wire.setClock(1000000);
 
   myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
 
@@ -240,6 +250,19 @@ void setup() {
 
   Serial.println(F("IMU enabled"));
 
+
+  IPAddress serverIp;
+
+  while (serverIp.toString() == "0.0.0.0") {
+    Serial.println("Resolving host...");
+    delay(250);
+    serverIp = MDNS.queryHost("mmdongle");
+  }
+
+  	
+  Serial.println(serverIp.toString());
+
+  serverIP = serverIp.toString();
 
 
   delay(500);
@@ -274,8 +297,7 @@ void setup() {
     ,
     NULL, 1);
 
-    batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
-
+  batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
 }
 
 void loop() {
@@ -290,7 +312,7 @@ void TaskWifi(void *pvParameters) {
     static uint32_t prev_ms = millis();
 
     if (millis() > (prev_ms + (1000 / fps))) {
-      String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v/4192) + "}";
+      String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v / 4192) + "}";
       Serial.println(url);
 
       webSocket.sendTXT(url.c_str());
@@ -317,7 +339,7 @@ void TaskReadIMU(void *pvParameters) {
   for (;;) {
 
     static uint32_t prev_ms1 = millis();
-    if (millis() > (prev_ms1 + 1000*60)) {
+    if (millis() > (prev_ms1 + 1000 * 60)) {
       // read battery every minute
       batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
       prev_ms1 = millis();
@@ -329,7 +351,7 @@ void TaskReadIMU(void *pvParameters) {
       quat.z = myIMU.getQuatK();
       quat.w = myIMU.getQuatReal();
 
-/*
+      /*
       ax = myIMU.getAccelX();
       ay = myIMU.getAccelY();
       az = myIMU.getAccelZ();
