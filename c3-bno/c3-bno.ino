@@ -16,7 +16,8 @@
 // ID wifi to connect to
 const char *ssid = "mesquiteMocap";
 const char *password = "movement";
-String serverIP = "192.168.1.102";
+String serverIP = "192.168.1.102"; // placeholder; mDNS will resolve.
+String dongleName = "mmdongle";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
@@ -256,7 +257,7 @@ void setup() {
   while (serverIp.toString() == "0.0.0.0") {
     Serial.println("Resolving host...");
     delay(250);
-    serverIp = MDNS.queryHost("mmdongle");
+    serverIp = MDNS.queryHost(dongleName);
   }
 
   	
@@ -319,8 +320,8 @@ void TaskWifi(void *pvParameters) {
       prev_ms = millis();
 
       count++;
-      if (count > 200) {
-        Serial.println(count);
+      if (count > 150) {
+        //Serial.println(count);
         if (quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0) {
           ESP.restart();
         }
