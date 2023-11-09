@@ -15,7 +15,7 @@
 // ID wifi to connect to
 const char *ssid = "mesquiteMocap";
 const char *password = "movement";
-String serverIP = "192.168.1.101";
+String serverIP = "192.168.1.102";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
@@ -28,7 +28,7 @@ WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
 int fps = 30;
-int port = 3000;
+int port = 80;
 
 float batt_v = 0.0;
 float quatI, quatJ, quatK, quatReal;
@@ -36,8 +36,8 @@ float quatI, quatJ, quatK, quatReal;
 
 
 // Choose only one!
-//String bone = "LeftArm";
-String bone = "LeftForeArm";
+// String bone = "LeftArm";
+// String bone = "LeftForeArm";
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
 // String bone = "LeftLeg";
@@ -48,7 +48,7 @@ String bone = "LeftForeArm";
 // String bone = "RightLeg";
 // String bone = "Spine";
 // String bone = "Head";
-// String bone = "Hips";
+String bone = "Hips";
 
 
 
