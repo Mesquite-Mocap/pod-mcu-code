@@ -42,8 +42,8 @@ float quatI, quatJ, quatK, quatReal;
 // String bone = "LeftForeArm";
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
-String bone = "LeftLeg";
-// String bone = "RightArm";
+// String bone = "LeftLeg";
+String bone = "RightArm";
 // String bone = "RightForeArm";
 // String bone = "RightHand";
 // String bone = "RightUpLeg";
@@ -219,10 +219,10 @@ void setup() {
 
   Wire.setClock(400000);
 
-  myIMU.enableARVRStabilizedGameRotationVector(50);
-  // myIMU.enableAccelerometer(50);
-  // myIMU.enableGyro(50);
-  // myIMU.enableMagnetometer(50);
+  myIMU.enableRotationVector(50);
+  myIMU.enableAccelerometer(50);
+  myIMU.enableGyro(50);
+  myIMU.enableMagnetometer(50);
 
   Serial.println(F("IMU enabled"));
 
@@ -294,12 +294,12 @@ void TaskWifi(void *pvParameters) {
       webSocket.sendTXT(url.c_str());
       prev_ms = millis();
 
-      // count++;
-      // if (count > 150) {
-      //   //Serial.println(count);
-      //   if (quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0) {
-      //     ESP.restart();
-      //   }
+      count++;
+      if (count > 150) {
+        //Serial.println(count);
+        if (quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0) {
+          ESP.restart();
+        }
         //checkLocking();
       // }
     }
