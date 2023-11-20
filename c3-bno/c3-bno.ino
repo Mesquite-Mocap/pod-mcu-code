@@ -301,7 +301,7 @@ void TaskWifi(void *pvParameters) {
           ESP.restart();
         }
         //checkLocking();
-      // }
+       }
     }
     // vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
   }
