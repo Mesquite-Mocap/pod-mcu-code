@@ -17,7 +17,7 @@
 const char *ssid = "mesquiteMocap";
 const char *password = "movement";
 String serverIP = "0.0.0.0"; // placeholder; mDNS will resolve.
-String dongleName = "mm";
+String dongleName = "mmdongle";
 int sensor_clock = 9;  // updated clock - double check your soldering
 int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
