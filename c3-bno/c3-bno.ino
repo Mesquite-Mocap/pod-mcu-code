@@ -43,18 +43,14 @@ float quatI, quatJ, quatK, quatReal;
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
 // String bone = "LeftLeg";
-// String bone = "RightArm";
+String bone = "RightArm";
 // String bone = "RightForeArm";
 // String bone = "RightHand";
 // String bone = "RightUpLeg";
 // String bone = "RightLeg";
 // String bone = "Spine";
 // String bone = "Head";
-String bone = "Hips";
-
-
-
-
+// String bone = "Hips";
 
 
 uint32_t readADC_Cal(int ADC_Raw) {
@@ -74,13 +70,7 @@ struct Quat {
   float w;
 } quat;
 
-
-
 #define NB_RECS 5
-
-
-
-
 
 
 char buff[256];
@@ -164,9 +154,6 @@ void TaskReadIMU(void *pvParameters);
 #define ARDUINO_RUNNING_CORE 1
 #endif
 
-
-
-
 void checkLocking() {
 
   Serial.print(quat.w);
@@ -197,9 +184,6 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-
-
-
   WiFiMulti.addAP(ssid, password);
 
   Serial.println("Connecting");
@@ -215,8 +199,6 @@ void setup() {
 
   mac_address = WiFi.macAddress();
   Serial.println(mac_address);
-
-
   delay(100);
 
   while (mdns_init() != ESP_OK) {
@@ -224,16 +206,9 @@ void setup() {
     Serial.println("Starting MDNS...");
   }
 
-
-
-
-
-
-
   Wire.flush();
   delay(100);
   Wire.begin(sensor_clock, sensor_data);
-
   myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
 
   if (myIMU.begin() == false) {
@@ -326,7 +301,7 @@ void TaskWifi(void *pvParameters) {
           ESP.restart();
         }
         //checkLocking();
-      }
+       }
     }
     // vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
   }
