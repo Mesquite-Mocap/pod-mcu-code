@@ -1,8 +1,3 @@
-#define LILYGO_WATCH_2019_WITH_TOUCH 
-#include <LilyGoWatch.h>
-TTGOClass *watch;
-TFT_eSPI *tft;
-BMA *sensor;
 
 
 #include <Wire.h>
@@ -26,30 +21,13 @@ String response;
 void setup() {
   Serial.begin(115200);
 
-      // Get TTGOClass instance
-    watch = TTGOClass::getWatch();
-
-    // Initialize the hardware, the BMA423 sensor has been initialized internally
-    watch->begin();
-
-    // Turn on the backlight
-    watch->openBL();
-
-    //Receive objects for easy writing
-    tft = watch->tft;
-
-    // Some display settings
-    tft->setTextColor(random(0xFFFF));
-    tft->drawString("BNO08x Quaternions",  5, 50, 4);
-    tft->setTextFont(4);
-    tft->setTextColor(TFT_WHITE, TFT_BLACK);
-
-
   delay(100); //  Wait for BNO to boot
   // Start i2c and BNO080
   Wire.flush();   // Reset I2C
-  myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
-  Wire.begin(22, 21);
+  //myIMU.begin(BNO080_DEFAULT_ADDRESS, Wire);
+  myIMU.begin(0x69, Wire);
+
+  Wire.begin(13, 14);
 
    if (myIMU.begin() == false)
   {
@@ -84,14 +62,5 @@ void loop() {
     Serial.print(F(" "));
     Serial.println(quatReal, 2);
 
-     tft->fillRect(98, 100, 70, 85, TFT_BLACK);
-      tft->setCursor(80, 100);
-      tft->print("X:"); tft->println(quatI);
-      tft->setCursor(80, 130);
-      tft->print("Y:"); tft->println(quatJ);
-      tft->setCursor(80, 160);
-      tft->print("Z:"); tft->println(quatK);
-      tft->setCursor(80, 190);
-      tft->print("W:"); tft->println(quatReal);
   }
 }
