@@ -69,7 +69,7 @@ void setup()
 #ifdef USE_SPI
   SPI_PORT.begin();
 #else
-  WIRE_PORT.begin(13,14);
+  WIRE_PORT.begin(14, 13);
   WIRE_PORT.setClock(400000);
 #endif
 

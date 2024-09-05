@@ -244,7 +244,7 @@ void setup() {
   delay(500);
 
   webSocket.begin(serverIP, port, "/hub");
-
+x
   // event handler
   webSocket.onEvent(webSocketEvent);
 

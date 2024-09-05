@@ -5,6 +5,13 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <WebSocketsClient.h> 
+
+// esp32 ble
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+
 //#define FAST_MODE
 
 #define I2C_SDA_PIN 25
