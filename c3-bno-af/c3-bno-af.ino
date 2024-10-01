@@ -6,8 +6,32 @@
 #include <WebSocketsClient.h>
 #include <ESPmDNS.h>
 
-#include "SparkFun_BNO080_Arduino_Library.h"  // Click here to get the library: https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library
-#define I2C_BUFFER_LENGTH 128
+#include <Adafruit_BNO08x.h>
+
+// #define FAST_MODE
+
+#define BNO08X_RESET -1
+
+
+Adafruit_BNO08x  bno08x(BNO08X_RESET);
+sh2_SensorValue_t sensorValue;
+
+
+#ifdef FAST_MODE
+  // Top frequency is reported to be 1000Hz (but freq is somewhat variable)
+  sh2_SensorId_t reportType = SH2_GYRO_INTEGRATED_RV;
+  long reportIntervalUs = 2000;
+#else
+  // Top frequency is about 250Hz but this report is more accurate
+  sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
+  long reportIntervalUs = 5000;
+#endif
+void setReports(sh2_SensorId_t reportType, long report_interval) {
+  Serial.println("Setting desired reports");
+  if (! bno08x.enableReport(reportType, report_interval)) {
+    Serial.println("Could not enable stabilized remote vector");
+  }
+}
 
 #include "esp_adc_cal.h"
 #define BAT_ADC 2
@@ -21,8 +45,6 @@ String dongleName = "mmdongle";
 int sensor_clock = 18;  // updated clock - double check your soldering
 int sensor_data = 19;   // this is from the soldering. double check what you have soldered your data to
 
-
-BNO080 myIMU;
 
 String mac_address;
 
@@ -43,12 +65,12 @@ float quatI, quatJ, quatK, quatReal;
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
 // String bone = "LeftLeg";
-String bone = "RightArm";
+// String bone = "RightArm";
 // String bone = "RightForeArm";
 // String bone = "RightHand";
 // String bone = "RightUpLeg";
 // String bone = "RightLeg";
-// String bone = "Spine";
+ String bone = "Spine";
 // String bone = "Head";
 // String bone = "Hips";
 
@@ -154,35 +176,12 @@ void TaskReadIMU(void *pvParameters);
 #define ARDUINO_RUNNING_CORE 1
 #endif
 
-void checkLocking() {
-
-  Serial.print(quat.w);
-  Serial.print(" ");
-  Serial.print(quat.x);
-  Serial.print(" ");
-  Serial.print(quat.y);
-  Serial.print(" ");
-  Serial.print(quat.z);
-
-  float ax = myIMU.getAccelX();
-  float ay = myIMU.getAccelY();
-  float az = myIMU.getAccelZ();
-
-  Serial.print(" ");
-  Serial.print(ax);
-  Serial.print(" ");
-  Serial.print(ay);
-  Serial.print(" ");
-  Serial.print(az);
-
-
-  Serial.println();
-}
 
 void setup() {
 
   Serial.begin(115200);
   delay(500);
+
 
   WiFiMulti.addAP(ssid, password);
 
@@ -205,26 +204,20 @@ void setup() {
     delay(1000);
     Serial.println("Starting MDNS...");
   }
+  
 
   Wire.flush();
   delay(100);
   Wire.begin(sensor_clock, sensor_data);
-  myIMU.begin(0x4B, Wire);
-
-  if (myIMU.begin() == false) {
-    Serial.println("BNO080 not detected at default I2C address. Check your jumpers and the hookup guide. Freezing...");
-    while (1)
-      ;
+  delay(1000);
+  if (!bno08x.begin_I2C(0x4B, &Wire, 0)) {
+    Serial.println("Failed to find BNO08x chip");
+    while (1) { delay(10); }
   }
-
-  Wire.setClock(400000);
-
-  myIMU.enableRotationVector(50);
-  myIMU.enableAccelerometer(50);
-  myIMU.enableGyro(50);
-  myIMU.enableMagnetometer(50);
-
+  Serial.println("BNO08x Found!");
   Serial.println(F("IMU enabled"));
+  setReports(reportType, reportIntervalUs);
+
 
 
   IPAddress serverIp;
@@ -321,17 +314,19 @@ void TaskReadIMU(void *pvParameters) {
       prev_ms1 = millis();
     }
 
-    if (myIMU.dataAvailable() == true) {
-      quat.x = myIMU.getQuatI();
-      quat.y = myIMU.getQuatJ();
-      quat.z = myIMU.getQuatK();
-      quat.w = myIMU.getQuatReal();
-
-      /*
-      ax = myIMU.getAccelX();
-      ay = myIMU.getAccelY();
-      az = myIMU.getAccelZ();
-      */
+  if (bno08x.wasReset()) {
+    Serial.print("sensor was reset ");
+    setReports(reportType, reportIntervalUs);
+  }
+  
+    if (bno08x.getSensorEvent(&sensorValue)) {
+      sh2_RotationVectorWAcc_t* rotational_vector = &sensorValue.un.arvrStabilizedRV;
+      Serial.println(String(rotational_vector->i) + " " + String(rotational_vector->j) + " " + String(rotational_vector->k) + " " + String(rotational_vector->real));
+    
+      quat.x = rotational_vector->i;
+      quat.y = rotational_vector->j;
+      quat.z = rotational_vector->k;
+      quat.w = rotational_vector->real;
     }
 
 
