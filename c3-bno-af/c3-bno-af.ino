@@ -6,7 +6,7 @@
 #include <WebSocketsClient.h>
 #include <ESPmDNS.h>
 
-#include <Adafruit_BNO08x.h>
+#include <Adafruit_BNO08x.h> // http://librarymanager/All#Adafruit_BNO08x
 
 // #define FAST_MODE
 
