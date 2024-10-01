@@ -8,7 +8,6 @@
 
 #include <Adafruit_BNO08x.h> // http://librarymanager/All#Adafruit_BNO08x
 
-// #define FAST_MODE
 
 #define BNO08X_RESET -1
 
@@ -17,15 +16,10 @@ Adafruit_BNO08x  bno08x(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
 
 
-#ifdef FAST_MODE
-  // Top frequency is reported to be 1000Hz (but freq is somewhat variable)
-  sh2_SensorId_t reportType = SH2_GYRO_INTEGRATED_RV;
-  long reportIntervalUs = 2000;
-#else
   // Top frequency is about 250Hz but this report is more accurate
-  sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
+  sh2_SensorId_t reportType = SH2_GAME_ROTATION_VECTOR;
   long reportIntervalUs = 5000;
-#endif
+
 void setReports(sh2_SensorId_t reportType, long report_interval) {
   Serial.println("Setting desired reports");
   if (! bno08x.enableReport(reportType, report_interval)) {
@@ -320,7 +314,7 @@ void TaskReadIMU(void *pvParameters) {
   }
   
     if (bno08x.getSensorEvent(&sensorValue)) {
-      sh2_RotationVectorWAcc_t* rotational_vector = &sensorValue.un.arvrStabilizedRV;
+      sh2_RotationVector* rotational_vector = &sensorValue.un.gameRotationVector;
       Serial.println(String(rotational_vector->i) + " " + String(rotational_vector->j) + " " + String(rotational_vector->k) + " " + String(rotational_vector->real));
     
       quat.x = rotational_vector->i;

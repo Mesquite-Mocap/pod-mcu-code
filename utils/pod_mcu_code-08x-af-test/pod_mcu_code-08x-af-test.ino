@@ -6,7 +6,6 @@
 #define BNO08X_INT 9
 
 
-#define FAST_MODE
 
 // For SPI mode, we also need a RESET 
 //#define BNO08X_RESET 5
@@ -22,15 +21,10 @@ struct euler_t {
 Adafruit_BNO08x  bno08x(BNO08X_RESET);
 sh2_SensorValue_t sensorValue;
 
-#ifdef FAST_MODE
-  // Top frequency is reported to be 1000Hz (but freq is somewhat variable)
-  sh2_SensorId_t reportType = SH2_GYRO_INTEGRATED_RV;
-  long reportIntervalUs = 2000;
-#else
+
   // Top frequency is about 250Hz but this report is more accurate
   sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
   long reportIntervalUs = 5000;
-#endif
 void setReports(sh2_SensorId_t reportType, long report_interval) {
   Serial.println("Setting desired reports");
   if (! bno08x.enableReport(reportType, report_interval)) {
@@ -55,6 +49,9 @@ void setup(void) {
     while (1) { delay(10); }
   }
   Serial.println("BNO08x Found!");
+  //Wire.setClock(200000L);   // I2C speed, 400 kHz is a little fast for Arduino's pullups
+  bno08x.enableReport(SH2_ROTATION_VECTOR, 100000);
+  //bno08x.enableReport(SH2_MAGNETIC_FIELD_CALIBRATED, 100000);
 
 
   setReports(reportType, reportIntervalUs);
