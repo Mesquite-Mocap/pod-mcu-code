@@ -1,34 +1,4 @@
-/****************************************************************
- * Example6_DMP_Quat9_Orientation.ino
- * ICM 20948 Arduino Library Demo
- * Initialize the DMP based on the TDK InvenSense ICM20948_eMD_nucleo_1.0 example-icm20948
- * Paul Clark, April 25th, 2021
- * Based on original code by:
- * Owen Lyke @ SparkFun Electronics
- * Original Creation Date: April 17 2019
- * 
- * ** This example is based on InvenSense's _confidential_ Application Note "Programming Sequence for DMP Hardware Functions".
- * ** We are grateful to InvenSense for sharing this with us.
- * 
- * ** Important note: by default the DMP functionality is disabled in the library
- * ** as the DMP firmware takes up 14301 Bytes of program memory.
- * ** To use the DMP, you will need to:
- * ** Edit ICM_20948_C.h
- * ** Uncomment line 29: #define ICM_20948_USE_DMP
- * ** Save changes
- * ** If you are using Windows, you can find ICM_20948_C.h in:
- * ** Documents\Arduino\libraries\SparkFun_ICM-20948_ArduinoLibrary\src\util
- *
- * Please see License.md for the license information.
- *
- * Distributed as-is; no warranty is given.
- ***************************************************************/
-
-//#define QUAT_ANIMATION // Uncomment this line to output data in the correct format for ZaneL's Node.js Quaternion animation tool: https://github.com/ZaneL/quaternion_sensor_3d_nodejs
-
 #include "ICM_20948.h" // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
-
-//#define USE_SPI       // Uncomment this to use SPI
 
 #define SERIAL_PORT Serial
 
@@ -40,11 +10,7 @@
 // On the SparkFun 9DoF IMU breakout the default is 1, and when the ADR jumper is closed the value becomes 0
 #define AD0_VAL 0
 
-#ifdef USE_SPI
-ICM_20948_SPI myICM; // If using SPI create an ICM_20948_SPI object
-#else
 ICM_20948_I2C myICM; // Otherwise create an ICM_20948_I2C object
-#endif
 
 void setup()
 {
@@ -69,7 +35,7 @@ void setup()
 #ifdef USE_SPI
   SPI_PORT.begin();
 #else
-  WIRE_PORT.begin(14, 13);
+  WIRE_PORT.begin(9, 8);
   WIRE_PORT.setClock(400000);
 #endif
 
@@ -80,19 +46,7 @@ void setup()
   bool initialized = false;
   while (!initialized)
   {
-
-    // Initialize the ICM-20948
-    // If the DMP is enabled, .begin performs a minimal startup. We need to configure the sample mode etc. manually.
-#ifdef USE_SPI
-    myICM.begin(CS_PIN, SPI_PORT);
-#else
     myICM.begin(WIRE_PORT, AD0_VAL);
-#endif
-
-#ifndef QUAT_ANIMATION
-    SERIAL_PORT.print(F("Initialization of the sensor returned: "));
-    SERIAL_PORT.println(myICM.statusString());
-#endif
     if (myICM.status != ICM_20948_Stat_Ok)
     {
 #ifndef QUAT_ANIMATION
@@ -106,9 +60,6 @@ void setup()
     }
   }
 
-#ifndef QUAT_ANIMATION
-  SERIAL_PORT.println(F("Device connected!"));
-#endif
 
   bool success = true; // Use success to show if the DMP configuration was successful
 
