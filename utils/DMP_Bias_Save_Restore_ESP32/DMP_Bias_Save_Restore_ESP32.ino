@@ -289,7 +289,7 @@ void loop()
   {
     if (!biasesStored) // Should we store the biases?
     {
-      if (millis() > (startTime + 120000)) // Is it time to store the biases?
+      if (millis() > (startTime + 1*60*1000)) // Is it time to store the biases?
       {
         Serial.println(F("\r\n\r\n\r\nSaving bias data..."));
 
