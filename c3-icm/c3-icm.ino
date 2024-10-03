@@ -1,9 +1,17 @@
+#include <EEPROM.h>
+#include <Wire.h>
+#include <WiFi.h>
+#include <WiFiMulti.h>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <WebSocketsClient.h>
+#include <ESPmDNS.h>
+
 #include "ICM_20948.h" // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 #define AD0_VAL 0
 
 ICM_20948_I2C myICM; // Otherwise create an ICM_20948_I2C object
 
-#include <EEPROM.h>
 
 // Define a storage struct for the biases. Include a non-zero header and a simple checksum
 struct biasStore
@@ -79,13 +87,177 @@ void printBiases(biasStore *store)
 
 }
 
-void setup()
-{
 
-  delay(1000);
+#include "esp_adc_cal.h"
+#define BAT_ADC 2
 
-  Serial.begin(115200); // Start the serial console
-  Serial.println(F("ICM-20948 Example"));
+
+// ID wifi to connect to
+const char *ssid = "mesquiteMocap";
+const char *password = "movement";
+String serverIP = "0.0.0.0"; // placeholder; mDNS will resolve.
+String dongleName = "mmdongle";
+int sensor_clock = 18;  // updated clock - double check your soldering
+int sensor_data = 19;   // this is from the soldering. double check what you have soldered your data to
+
+
+String mac_address;
+
+WiFiMulti WiFiMulti;
+WebSocketsClient webSocket;
+
+int fps = 37;
+int port = 80;
+
+float batt_v = 0.0;
+float quatI, quatJ, quatK, quatReal;
+
+
+
+// Choose only one!
+// String bone = "LeftArm";
+// String bone = "LeftForeArm";
+// String bone = "LeftHand";
+// String bone = "LeftUpLeg";
+// String bone = "LeftLeg";
+String bone = "RightArm";
+// String bone = "RightForeArm";
+// String bone = "RightHand";
+// String bone = "RightUpLeg";
+// String bone = "RightLeg";
+// String bone = "Spine";
+// String bone = "Head";
+// String bone = "Hips";
+
+
+uint32_t readADC_Cal(int ADC_Raw) {
+  esp_adc_cal_characteristics_t adc_chars;
+
+  esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
+  return (esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
+}
+
+boolean start = false;
+
+
+struct Quat {
+  float x;
+  float y;
+  float z;
+  float w;
+} quat;
+
+#define NB_RECS 5
+
+
+char buff[256];
+bool rtcIrq = false;
+bool initial = 1;
+bool otaStart = false;
+
+uint8_t func_select = 0;
+uint8_t omm = 99;
+uint8_t xcolon = 0;
+uint32_t targetTime = 0;  // for next 1 second timeout
+uint32_t colour = 0;
+int vref = 1100;
+
+bool pressed = false;
+uint32_t pressedTime = 0;
+bool charge_indication = false;
+
+uint8_t hh, mm, ss;
+int pacnum = 0;
+
+
+
+void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
+  const uint8_t *src = (const uint8_t *)mem;
+  Serial.printf("\n[HEXDUMP] Address: 0x%08X len: 0x%X (%d)", (ptrdiff_t)src, len, len);
+  for (uint32_t i = 0; i < len; i++) {
+    if (i % cols == 0) {
+      Serial.printf("\n[0x%08X] 0x%08X: ", (ptrdiff_t)src, i);
+    }
+    Serial.printf("%02X ", *src);
+    src++;
+  }
+  Serial.printf("\n");
+}
+
+/*
+ * Event handling for the websocket.  
+ * This is from WebSocketClient.h 
+ */
+
+void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
+  switch (type) {
+    case WStype_DISCONNECTED:  //when disconnected
+      Serial.printf("[WSc] Disconnected!\n");
+      break;
+    case WStype_CONNECTED:  //when connected
+      Serial.printf("[WSc] Connected to url: %s\n", payload);
+      // send message to server when Connected
+      webSocket.sendTXT("Connected");  //validation that you've connected
+      webSocket.enableHeartbeat(1000, 100, 100);
+      break;
+    case WStype_TEXT:  //when you get a message
+      Serial.printf("[WSc] get text: %s\n", payload);
+      // send message to server
+      // webSocket.sendTXT("message here");
+      break;
+    case WStype_BIN:
+      Serial.printf("[WSc] get binary length: %u\n", length);
+      hexdump(payload, length);
+      // send data to server
+      // webSocket.sendBIN(payload, length);
+      break;
+    case WStype_ERROR:
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
+      break;
+  }
+}
+
+
+// define two tasks for Blink & AnalogRead
+void TaskWifi(void *pvParameters);
+void TaskReadIMU(void *pvParameters);
+
+#if CONFIG_FREERTOS_UNICORE
+#define ARDUINO_RUNNING_CORE 0
+#else
+#define ARDUINO_RUNNING_CORE 1
+#endif
+
+void setup() {
+
+  Serial.begin(115200);
+  delay(500);
+
+  WiFiMulti.addAP(ssid, password);
+
+  Serial.println("Connecting");
+
+  while (WiFiMulti.run() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.print("Connected to WiFi network with IP Address: ");  //this will be the local IP
+  Serial.println(WiFi.localIP());
+
+  mac_address = WiFi.macAddress();
+  Serial.println(mac_address);
+  delay(100);
+
+  while (mdns_init() != ESP_OK) {
+    delay(1000);
+    Serial.println("Starting MDNS...");
+  }
+
 
 
   Wire.begin(19,18);
@@ -223,10 +395,108 @@ void setup()
   Serial.println(F("Before then:"));
   Serial.println(F("* Rotate the sensor around all three axes"));
   Serial.println(F("* Hold the sensor stationary in all six orientations for a few seconds"));
+
+
+  Serial.println(F("IMU enabled"));
+
+
+  IPAddress serverIp;
+
+
+  while (serverIp.toString() == "0.0.0.0") {
+    Serial.println("Resolving host...");
+    delay(250);
+    serverIp = MDNS.queryHost(dongleName);
+  }
+  
+
+  	
+  Serial.println(serverIp.toString());
+
+  serverIP = serverIp.toString();
+
+
+  delay(500);
+
+  webSocket.begin(serverIP, port, "/hub");
+
+  // event handler
+  webSocket.onEvent(webSocketEvent);
+
+  // use HTTP Basic Authorization this is optional remove if not needed
+  // webSocket.setAuthorization("user", "Password");
+
+  // try ever 5000 again if connection has failed
+  webSocket.setReconnectInterval(0);
+  webSocket.sendTXT(String(millis()).c_str());
+
+
+  xTaskCreatePinnedToCore(
+    TaskWifi, "TaskWifi"  // A name just for humans
+    ,
+    10000  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,
+    NULL, 1  // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+    ,
+    NULL, 0);
+
+  // delay(1000);
+  xTaskCreatePinnedToCore(
+    TaskReadIMU, "TaskReadIMU", 10000  // Stack size
+    ,
+    NULL, 1  // Priority
+    ,
+    NULL, 1);
+
+  batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
 }
 
-void loop()
-{
+void loop() {
+}
+
+int count = 0;
+
+
+void TaskWifi(void *pvParameters) {
+  for (;;) {
+    webSocket.loop();
+    static uint32_t prev_ms = millis();
+
+    if (millis() > (prev_ms + (1000 / fps))) {
+      String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v / 4192) + "}";
+      Serial.println(url);
+
+      webSocket.sendTXT(url.c_str());
+      prev_ms = millis();
+
+      count++;
+      if (count > 150) {
+        //Serial.println(count);
+        if (quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0) {
+          ESP.restart();
+        }
+        //checkLocking();
+       }
+    }
+    // vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
+  }
+}
+
+float ax;
+float ay;
+float az;
+
+void TaskReadIMU(void *pvParameters) {
+  for (;;) {
+
+    static uint32_t prev_ms1 = millis();
+    if (millis() > (prev_ms1 + 1000 * fps)) {
+      // read battery every minute
+      batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
+      prev_ms1 = millis();
+    }
+
+
   static unsigned long startTime = millis(); // Save the biases when the code has been running for two minutes
   static bool biasesStored = false;
   
@@ -265,14 +535,7 @@ void loop()
       double t4 = +1.0 - 2.0 * (qy * qy + qz * qz);
       double yaw = atan2(t3, t4) * 180.0 / PI;
 
-/*
-      Serial.print(F("Roll: "));
-      Serial.print(roll, 1);
-      Serial.print(F("\tPitch: "));
-      Serial.print(pitch, 1);
-      Serial.print(F("\tYaw: "));
-      Serial.println(yaw, 1);
-      */
+
       Serial.print(qw, 3);
       Serial.print(" ");
       Serial.print(qx, 3);
@@ -281,7 +544,10 @@ void loop()
       Serial.print(" ");
       Serial.print(qz, 3);
       Serial.println();
-
+      quat.w = qw;
+      quat.x = qx;
+      quat.y = qy;
+      quat.z = qz;
     }
   }
 
@@ -332,5 +598,10 @@ void loop()
     }
       
     //delay(10);
+  }
+
+
+
+    //vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
   }
 }
