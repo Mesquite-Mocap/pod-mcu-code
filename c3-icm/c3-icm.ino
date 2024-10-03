@@ -557,6 +557,7 @@ void TaskReadIMU(void *pvParameters) {
     {
       if (millis() > (startTime + 1*60*1000)) // Is it time to store the biases?
       {
+        startTime = millis();
         Serial.println(F("\r\n\r\n\r\nSaving bias data..."));
 
         biasStore store;
