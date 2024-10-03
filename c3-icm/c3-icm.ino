@@ -553,7 +553,7 @@ void TaskReadIMU(void *pvParameters) {
 
   if (myICM.status != ICM_20948_Stat_FIFOMoreDataAvail) // If more data is available then we should read it right away - and not delay
   {
-    if (!biasesStored) // Should we store the biases?
+    if (true/*!biasesStored*/) // Should we store the biases?
     {
       if (millis() > (startTime + 1*60*1000)) // Is it time to store the biases?
       {
