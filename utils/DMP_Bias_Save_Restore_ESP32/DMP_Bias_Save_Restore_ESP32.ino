@@ -273,13 +273,13 @@ void loop()
       Serial.print(F("\tYaw: "));
       Serial.println(yaw, 1);
       */
-      Serial.print(qw, 3);
-      Serial.print(" ");
       Serial.print(qx, 3);
       Serial.print(" ");
       Serial.print(qy, 3);
       Serial.print(" ");
-      Serial.print(qz, 3);
+      Serial.print(qx, 3);
+      Serial.print(" ");
+      Serial.print(qw, 3);
       Serial.println();
 
     }
@@ -292,7 +292,7 @@ void loop()
       if (millis() > (startTime + 1*60*1000)) // Is it time to store the biases?
       {
         startTime = millis();
-        Serial.println(F("\r\n\r\n\r\nSaving bias data..."));
+        //Serial.println(F("\r\n\r\n\r\nSaving bias data..."));
 
         biasStore store;
           
@@ -316,6 +316,7 @@ void loop()
           EEPROM.commit(); // ESP32/SAMD/STM32 needs this
   
           EEPROM.get(0, store); // Read existing EEPROM, starting at address 0
+         /*
           if (isBiasStoreValid(&store))
           {
             Serial.println(F("Biases stored."));
@@ -324,14 +325,15 @@ void loop()
           }
           else
             Serial.println(F("Bias store failed!\r\n\r\n\r\n"));
+            */
         }
-        else
+        /*else
         {
           Serial.println(F("Bias read failed!\r\n\r\n\r\n"));
-        }
+        }*/
       }
     }
       
     //delay(10);
   }
-}
+} 

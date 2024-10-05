@@ -6,7 +6,7 @@
 void setup()
 {
   Serial.begin (115200);  
-  Wire.begin (9, 8);   // sda, scl
+  Wire.begin (19, 18);   // sda, scl
 }
 
 void Scanner ()
