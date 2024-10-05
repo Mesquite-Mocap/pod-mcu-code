@@ -97,8 +97,8 @@ const char *ssid = "mesquiteMocap";
 const char *password = "movement";
 String serverIP = "0.0.0.0"; // placeholder; mDNS will resolve.
 String dongleName = "mmdongle";
-int sensor_clock = 18;  // updated clock - double check your soldering
-int sensor_data = 19;   // this is from the soldering. double check what you have soldered your data to
+int sensor_clock = 19;  // updated clock - double check your soldering
+int sensor_data = 18;   // this is from the soldering. double check what you have soldered your data to
 
 
 String mac_address;
@@ -115,12 +115,12 @@ float quatI, quatJ, quatK, quatReal;
 
 
 // Choose only one!
-// String bone = "LeftArm";
+ String bone = "LeftArm";
 // String bone = "LeftForeArm";
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
 // String bone = "LeftLeg";
-String bone = "RightArm";
+// String bone = "RightArm";
 // String bone = "RightForeArm";
 // String bone = "RightHand";
 // String bone = "RightUpLeg";
