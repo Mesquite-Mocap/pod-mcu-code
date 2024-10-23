@@ -178,9 +178,13 @@ void setup() {
 
   Serial.println("Connecting");
 
+  int start = millis();
   while (WiFiMulti.run() != WL_CONNECTED) {
     delay(100);
     Serial.print(".");
+    if(millis() - start > 1000*20){
+          esp_deep_sleep_start();
+    }
   }
 
   Serial.println("");
@@ -191,9 +195,13 @@ void setup() {
   Serial.println(mac_address);
   delay(100);
 
+  int st = millis();
   while (mdns_init() != ESP_OK) {
     delay(1000);
     Serial.println("Starting MDNS...");
+    if(millis() - st > 1000*20){
+          esp_deep_sleep_start();
+    }
   }
 
   Wire.begin(19,18);
