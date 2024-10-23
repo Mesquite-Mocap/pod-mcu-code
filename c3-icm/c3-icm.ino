@@ -10,7 +10,9 @@
 #define AD0_VAL 0
 ICM_20948_I2C myICM; // Otherwise create an ICM_20948_I2C object
 
-
+#include "Button2.h"
+#define BUTTON_PIN  5
+Button2 button;
 
 #include "esp_adc_cal.h"
 #define BAT_ADC 2
@@ -39,7 +41,7 @@ float quatI, quatJ, quatK, quatReal;
 
 
 // Choose only one!
- String bone = "LeftArm";
+// String bone = "LeftArm";
 // String bone = "LeftForeArm";
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
@@ -49,7 +51,7 @@ float quatI, quatJ, quatK, quatReal;
 // String bone = "RightHand";
 // String bone = "RightUpLeg";
 // String bone = "RightLeg";
-// String bone = "Spine";
+ String bone = "Spine";
 // String bone = "Head";
 // String bone = "Hips";
 
@@ -157,8 +159,20 @@ void TaskReadIMU(void *pvParameters);
 
 void setup() {
 
+
+  pinMode(3, OUTPUT);
   Serial.begin(115200);
   delay(500);
+
+  digitalWrite(3, HIGH);
+
+  button.begin(BUTTON_PIN);
+  button.setLongClickTime(3000);
+  Serial.println(" Longpress Time:\t" + String(button.getLongClickTime()) + "ms");
+  button.setLongClickHandler(longClick);
+  button.setLongClickDetectedHandler(longClickDetected);
+
+  esp_deep_sleep_enable_gpio_wakeup(BIT(5), ESP_GPIO_WAKEUP_GPIO_LOW);
 
   WiFiMulti.addAP(ssid, password);
 
@@ -181,8 +195,6 @@ void setup() {
     delay(1000);
     Serial.println("Starting MDNS...");
   }
-
-
 
   Wire.begin(19,18);
   delay(500);
@@ -343,6 +355,7 @@ int count = 0;
 
 void TaskWifi(void *pvParameters) {
   for (;;) {
+    button.loop();
     webSocket.loop();
     static uint32_t prev_ms = millis();
 
@@ -453,4 +466,15 @@ icm_20948_DMP_data_t data;
 
     //vTaskDelay(1);  // one tick delay (15ms) in between reads for stability
   }
+}
+
+void longClickDetected(Button2& btn) {
+    Serial.print("---------------- long click #");
+    Serial.print(btn.getLongClickCount());
+    Serial.println(" detected");
+      digitalWrite(3, LOW);
+}
+
+void longClick(Button2& btn) {
+    esp_deep_sleep_start();
 }

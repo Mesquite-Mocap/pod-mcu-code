@@ -56,21 +56,12 @@ void setup()
 
     // Initialize the ICM-20948
     // If the DMP is enabled, .begin performs a minimal startup. We need to configure the sample mode etc. manually.
-#ifdef USE_SPI
-    myICM.begin(CS_PIN, SPI_PORT);
-#else
-    myICM.begin(WIRE_PORT, AD0_VAL);
-#endif
 
-#ifndef QUAT_ANIMATION
-    SERIAL_PORT.print(F("Initialization of the sensor returned: "));
-    SERIAL_PORT.println(myICM.statusString());
-#endif
+    myICM.begin(WIRE_PORT, AD0_VAL);
+
     if (myICM.status != ICM_20948_Stat_Ok)
     {
-#ifndef QUAT_ANIMATION
       SERIAL_PORT.println(F("Trying again..."));
-#endif
       delay(500);
     }
     else
@@ -79,9 +70,7 @@ void setup()
     }
   }
 
-#ifndef QUAT_ANIMATION
   SERIAL_PORT.println(F("Device connected!"));
-#endif
 
   bool success = true; // Use success to show if the DMP configuration was successful
 
