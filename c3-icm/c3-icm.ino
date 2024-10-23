@@ -307,10 +307,14 @@ void setup() {
   IPAddress serverIp;
 
 
+  int st2 = millis();
   while (serverIp.toString() == "0.0.0.0") {
     Serial.println("Resolving host...");
     delay(250);
     serverIp = MDNS.queryHost(dongleName);
+    if(millis() - st2 > 1000*20){
+          esp_deep_sleep_start();
+    }
   }
   
 
