@@ -271,7 +271,7 @@ void setup() {
   digitalWrite(3, HIGH);
 
   button.begin(BUTTON_PIN);
-  button.setLongClickTime(3000);
+  button.setLongClickTime(2000);
   Serial.println(" Longpress Time:\t" + String(button.getLongClickTime()) + "ms");
   button.setLongClickHandler(longClick);
   button.setLongClickDetectedHandler(longClickDetected);
@@ -491,6 +491,7 @@ void longClickDetected(Button2& btn) {
     Serial.print(btn.getLongClickCount());
     Serial.println(" detected");
       digitalWrite(3, LOW);
+      webSocket.disconnect();
 }
 
 void longClick(Button2& btn) {
