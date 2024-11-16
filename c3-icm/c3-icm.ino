@@ -271,7 +271,7 @@ void setup() {
   digitalWrite(3, HIGH);
 
   button.begin(BUTTON_PIN);
-  button.setLongClickTime(2000);
+  button.setLongClickTime(1500);
   Serial.println(" Longpress Time:\t" + String(button.getLongClickTime()) + "ms");
   button.setLongClickHandler(longClick);
   button.setLongClickDetectedHandler(longClickDetected);
