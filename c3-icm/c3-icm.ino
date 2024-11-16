@@ -63,7 +63,7 @@ uint32_t readADC_Cal(int ADC_Raw) {
   return (esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
 }
 
-boolean start = false;
+bool calibrated = false;
 
 
 struct Quat {
@@ -128,6 +128,10 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
       break;
     case WStype_TEXT:  //when you get a message
       Serial.printf("[WSc] get text: %s\n", payload);
+      //if(String((char*)payload) == "calibrate"){
+        Serial.println((char*)payload);
+        ESP.restart();
+      //}
       // send message to server
       // webSocket.sendTXT("message here");
       break;
@@ -211,7 +215,7 @@ void setupIMU()
   //    INV_ICM20948_SENSOR_ORIENTATION                 (32-bit 9-axis quaternion + heading accuracy)
 
   // Enable the DMP orientation sensor
-  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_LINEAR_ACCELERATION) == ICM_20948_Stat_Ok);
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok);
 
   // Enable any additional sensors / features
   //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok);
@@ -258,6 +262,7 @@ void setupIMU()
 
 
   Serial.println(F("IMU enabled"));
+  calibrated = true;
 }
 
 
@@ -271,7 +276,7 @@ void setup() {
   digitalWrite(3, HIGH);
 
   button.begin(BUTTON_PIN);
-  button.setLongClickTime(1500);
+  button.setLongClickTime(1000);
   Serial.println(" Longpress Time:\t" + String(button.getLongClickTime()) + "ms");
   button.setLongClickHandler(longClick);
   button.setLongClickDetectedHandler(longClickDetected);
@@ -378,8 +383,8 @@ void TaskWifi(void *pvParameters) {
     static uint32_t prev_ms = millis();
 
     if (millis() > (prev_ms + (1000 / fps))) {
-      String url = "{\"id\":\"" + mac_address + "\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v / 4192) + "}";
-      Serial.println(url);
+      String url = "{\"id\":\"" + mac_address + "\", \"millis\":\"" + String(millis()) +"\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v / 4192) + "}";
+     // Serial.println(url);
 
       webSocket.sendTXT(url.c_str());
       prev_ms = millis();
@@ -410,6 +415,7 @@ void TaskReadIMU(void *pvParameters) {
       batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
       prev_ms1 = millis();
     }
+
 
 icm_20948_DMP_data_t data;
   myICM.readDMPdataFromFIFO(&data);
@@ -459,7 +465,7 @@ icm_20948_DMP_data_t data;
       double t4 = +1.0 - 2.0 * (q2sqr + q3 * q3);
       double yaw = atan2(t3, t4) * 180.0 / PI;
 
-
+/*
       Serial.print(q0, 3);
       Serial.print(" ");
       Serial.print(q1, 3);
@@ -468,6 +474,7 @@ icm_20948_DMP_data_t data;
       Serial.print(" ");
       Serial.print(q3, 3);
       Serial.println();
+      */
 
       quat.w = q0;
       quat.x = q1;
