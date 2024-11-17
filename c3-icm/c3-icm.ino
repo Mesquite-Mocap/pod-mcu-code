@@ -276,7 +276,7 @@ void setup() {
   digitalWrite(3, HIGH);
 
   button.begin(BUTTON_PIN);
-  button.setLongClickTime(1000);
+  button.setLongClickTime(1200);
   Serial.println(" Longpress Time:\t" + String(button.getLongClickTime()) + "ms");
   button.setLongClickHandler(longClick);
   button.setLongClickDetectedHandler(longClickDetected);
@@ -378,8 +378,8 @@ int count = 0;
 
 void TaskWifi(void *pvParameters) {
   for (;;) {
-    button.loop();
     webSocket.loop();
+    button.loop();
     static uint32_t prev_ms = millis();
 
     if (millis() > (prev_ms + (1000 / fps))) {
