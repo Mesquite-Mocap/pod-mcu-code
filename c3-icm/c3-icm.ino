@@ -48,11 +48,11 @@ float quatI, quatJ, quatK, quatReal;
 // String bone = "LeftLeg";
 // String bone = "LeftFoot";
 // String bone = "RightArm";
-// String bone = "RightForeArm";
+ String bone = "RightForeArm";
 // String bone = "RightHand";
 // String bone = "RightUpLeg";
 // String bone = "RightLeg";
- String bone = "Spine";
+// String bone = "Spine";
 // String bone = "Head";  
 
 
