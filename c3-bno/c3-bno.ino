@@ -18,8 +18,8 @@ const char *ssid = "mesquiteMocap";
 const char *password = "movement";
 String serverIP = "0.0.0.0"; // placeholder; mDNS will resolve.
 String dongleName = "mmdongle";
-int sensor_clock = 18;  // updated clock - double check your soldering
-int sensor_data = 19;   // this is from the soldering. double check what you have soldered your data to
+int sensor_clock = 9;  // updated clock - double check your soldering
+int sensor_data = 8;   // this is from the soldering. double check what you have soldered your data to
 
 
 BNO080 myIMU;
@@ -43,12 +43,12 @@ float quatI, quatJ, quatK, quatReal;
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
 // String bone = "LeftLeg";
-String bone = "RightArm";
+// String bone = "RightArm";
 // String bone = "RightForeArm";
 // String bone = "RightHand";
 // String bone = "RightUpLeg";
 // String bone = "RightLeg";
-// String bone = "Spine";
+ String bone = "Spine";
 // String bone = "Head";
 // String bone = "Hips";
 
@@ -219,10 +219,12 @@ void setup() {
 
   Wire.setClock(400000);
 
-  myIMU.enableRotationVector(50);
-  myIMU.enableAccelerometer(50);
-  myIMU.enableGyro(50);
-  myIMU.enableMagnetometer(50);
+//  myIMU.enableRotationVector(50);
+//  myIMU.enableAccelerometer(50);
+//  myIMU.enableGyro(50);
+//  myIMU.enableMagnetometer(50);
+myIMU.enableARVRStabilizedGameRotationVector(5);
+//myIMU.enableARVRStabilizedGameRotationVector(5);
 
   Serial.println(F("IMU enabled"));
 
