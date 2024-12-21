@@ -27,6 +27,9 @@ void setup()
   SERIAL_PORT.println(F("ICM-20948 Example"));
 #endif
 
+  pinMode(3, OUTPUT);
+  digitalWrite(3, HIGH);
+
   delay(100);
 
 #ifndef QUAT_ANIMATION
@@ -208,6 +211,8 @@ void loop()
       SERIAL_PORT.print(q2, 3);
       SERIAL_PORT.print(" ");
       SERIAL_PORT.print(q3, 3);
+      SERIAL_PORT.print(" ");
+      SERIAL_PORT.print(millis()/1000);
       SERIAL_PORT.println();
     }
   }

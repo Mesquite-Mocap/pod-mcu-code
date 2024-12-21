@@ -36,6 +36,7 @@ void Scanner ()
 
 void loop()
 {
+  Serial.println(millis());
   Scanner ();
   delay (100);
 }

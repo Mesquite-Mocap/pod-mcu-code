@@ -52,9 +52,10 @@ float quatI, quatJ, quatK, quatReal;
 // String bone = "RightHand";
 // String bone = "RightUpLeg";
 // String bone = "RightLeg";
-// String bone = "Spine";
- String bone = "Head";  
+ String bone = "Spine";
+// String bone = "Head";  
 
+int dccount = 0;
 
 uint32_t readADC_Cal(int ADC_Raw) {
   esp_adc_cal_characteristics_t adc_chars;
@@ -119,11 +120,17 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
   switch (type) {
     case WStype_DISCONNECTED:  //when disconnected
       Serial.printf("[WSc] Disconnected!\n");
+      dccount++;
+      Serial.println(dccount);
+      if(dccount > 15){
+        esp_deep_sleep_start();
+      }
       break;
     case WStype_CONNECTED:  //when connected
       Serial.printf("[WSc] Connected to url: %s\n", payload);
       // send message to server when Connected
-      webSocket.sendTXT("Connected");  //validation that you've connected
+      webSocket.sendTXT("Connected"); 
+      dccount = 0;
       webSocket.enableHeartbeat(1000, 100, 100);
       break;
     case WStype_TEXT:  //when you get a message
@@ -218,8 +225,8 @@ void setupIMU()
   success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok);
 
   // Enable any additional sensors / features
-  //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok);
-  //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok);
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok);
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok);
   //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok);
 
   // Configuring DMP to output data at multiple ODRs:
@@ -498,6 +505,7 @@ void longClickDetected(Button2& btn) {
     Serial.print(btn.getLongClickCount());
     Serial.println(" detected");
       digitalWrite(3, LOW);
+      webSocket.sendTXT("disconnected"); 
       webSocket.disconnect();
 }
 
