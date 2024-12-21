@@ -121,7 +121,7 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
     case WStype_DISCONNECTED:  //when disconnected
       Serial.printf("[WSc] Disconnected!\n");
       dccount++;
-      Serial.println(dccount);
+      //Serial.println(dccount);
       if(dccount > 15){
         esp_deep_sleep_start();
       }
