@@ -418,7 +418,7 @@ void TaskReadIMU(void *pvParameters) {
   for (;;) {
 
     static uint32_t prev_ms1 = millis();
-    if (millis() > (prev_ms1 + 1000 * fps)) {
+    if (millis() > (prev_ms1 + 1000 * 10)) {
       // read battery every minute
       batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
       prev_ms1 = millis();
