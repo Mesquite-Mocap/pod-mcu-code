@@ -17,7 +17,7 @@ Button2 button;
 #include "esp_adc_cal.h"
 #define BAT_ADC 2
 
-
+int count = 0;
 // ID wifi to connect to
 const char *ssid = "mesquiteMocap";
 const char *password = "movement";
@@ -380,7 +380,7 @@ void setup() {
 void loop() {
 }
 
-int count = 0;
+int fcount = 0;
 
 
 void TaskWifi(void *pvParameters) {
@@ -390,7 +390,8 @@ void TaskWifi(void *pvParameters) {
     static uint32_t prev_ms = millis();
 
     if (millis() > (prev_ms + (1000 / fps))) {
-      String url = "{\"id\":\"" + mac_address + "\", \"millis\":\"" + String(millis()) +"\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v / 4192) + "}";
+      fcount++;
+      String url = "{\"id\":\"" + mac_address + "\", \"count\":\"" + String(fcount) +"\", \"millis\":\"" + String(millis()) +"\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v / 4192) + "}";
      // Serial.println(url);
 
       webSocket.sendTXT(url.c_str());
