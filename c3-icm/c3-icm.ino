@@ -391,6 +391,12 @@ void TaskWifi(void *pvParameters) {
 
     if (millis() > (prev_ms + (1000 / fps))) {
       fcount++;
+      if(fcount%fps == 0){
+        digitalWrite(3, HIGH);
+      }
+      else{
+         digitalWrite(3, LOW);
+      }
       String url = "{\"id\":\"" + mac_address + "\", \"count\":\"" + String(fcount) +"\", \"millis\":\"" + String(millis()) +"\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v / 4192) + "}";
      // Serial.println(url);
 
