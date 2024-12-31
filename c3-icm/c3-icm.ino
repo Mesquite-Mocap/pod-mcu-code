@@ -391,7 +391,7 @@ void TaskWifi(void *pvParameters) {
 
     if (millis() > (prev_ms + (1000 / fps))) {
       fcount++;
-      if(fcount%fps == 0){
+      if(fcount%2 == 0){
         digitalWrite(3, HIGH);
       }
       else{
