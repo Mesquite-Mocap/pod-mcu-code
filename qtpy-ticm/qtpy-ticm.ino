@@ -171,11 +171,11 @@ void TaskReadIMU(void *pvParameters);
 
 void setupIMU()
 {
-    Wire.begin(19,18);
+    Wire.begin(40,41);
   delay(500);
   Wire.setClock(400000);
 
-  //myICM.enableDebugging();
+ // myICM.enableDebugging();
 
   bool initialized = false;
   while (!initialized)
@@ -281,14 +281,15 @@ void setup() {
   delay(500);
 
   digitalWrite(3, HIGH);
-
+/*
   button.begin(BUTTON_PIN);
   button.setLongClickTime(1200);
   Serial.println(" Longpress Time:\t" + String(button.getLongClickTime()) + "ms");
   button.setLongClickHandler(longClick);
   button.setLongClickDetectedHandler(longClickDetected);
+  */
 
-  esp_deep_sleep_enable_gpio_wakeup(BIT(5), ESP_GPIO_WAKEUP_GPIO_LOW);
+ // esp_deep_sleep_enable_gpio_wakeup(BIT(5), ESP_GPIO_WAKEUP_GPIO_LOW);
 
   WiFiMulti.addAP(ssid, password);
 
@@ -374,7 +375,7 @@ void setup() {
     ,
     NULL, 1);
 
-  batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
+  //batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
 }
 
 void loop() {
@@ -407,7 +408,7 @@ void TaskWifi(void *pvParameters) {
       if (count > 150) {
         //Serial.println(count);
         if (quat.x == 0 && quat.y == 0 && quat.z == 0 && quat.w == 0) {
-          ESP.restart();
+         // ESP.restart();
         }
         //checkLocking();
        }
@@ -426,7 +427,7 @@ void TaskReadIMU(void *pvParameters) {
     static uint32_t prev_ms1 = millis();
     if (millis() > (prev_ms1 + 1000 * 10)) {
       // read battery every minute
-      batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
+     // batt_v = (readADC_Cal(analogRead(BAT_ADC))) * 2;
       prev_ms1 = millis();
     }
 
@@ -517,5 +518,5 @@ void longClickDetected(Button2& btn) {
 }
 
 void longClick(Button2& btn) {
-    esp_deep_sleep_start();
+   // esp_deep_sleep_start();
 }
