@@ -45,15 +45,16 @@ float quatI, quatJ, quatK, quatReal;
 // String bone = "LeftForeArm";
 // String bone = "LeftHand";
 // String bone = "LeftUpLeg";
-// String bone = "LeftLeg";
+ String bone = "LeftLeg";
 // String bone = "LeftFoot";
 // String bone = "RightArm";
 // String bone = "RightForeArm";
 // String bone = "RightHand";
 // String bone = "RightUpLeg";
 // String bone = "RightLeg";
+// String bone = "RightFoot";
 // String bone = "Spine";
- String bone = "Head";  
+// String bone = "Head";  
 
 int dccount = 0;
 
