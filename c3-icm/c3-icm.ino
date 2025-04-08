@@ -10,6 +10,18 @@
 #define AD0_VAL 0
 ICM_20948_I2C myICM; // Otherwise create an ICM_20948_I2C object
 
+float ax;
+float ay;
+float az;
+
+float gx;
+float gy;
+float gz;
+
+float mx;
+float my;
+float mz;
+
 #include "Button2.h"
 #define BUTTON_PIN  5
 Button2 button;
@@ -228,7 +240,7 @@ void setupIMU()
   // Enable any additional sensors / features
   success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok);
   success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok);
-  //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok);
+  success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok);
 
   // Configuring DMP to output data at multiple ODRs:
   // DMP is capable of outputting multiple sensor data at different rates to FIFO.
@@ -398,8 +410,8 @@ void TaskWifi(void *pvParameters) {
       else{
          digitalWrite(3, LOW);
       }
-      String url = "{\"id\":\"" + mac_address + "\", \"count\":\"" + String(fcount) +"\", \"millis\":\"" + String(millis()) +"\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v / 4192) + "}";
-     // Serial.println(url);
+      String url = "{\"id\":\"" + mac_address + "\", \"count\":\"" + String(fcount) +"\", \"millis\":\"" + String(millis()) +"\", \"bone\":\"" + bone + "\", \"x\":" + quat.x + ", \"y\":" + quat.y + ", \"z\":" + quat.z + ", \"w\":" + quat.w + ", \"batt\":" + (batt_v / 4192) + ",\"ax\":" + ax + ", \"ay\":" + ay + ", \"az\":" + az + ", \"gx\":" + gx + ", \"gy\":" + gy + ", \"gz\":" + gz + ", \"mx\":" + mx + ", \"my\":" + my + ", \"mz\":" + mz + "}";
+      Serial.println(url);
 
       webSocket.sendTXT(url.c_str());
       prev_ms = millis();
@@ -417,9 +429,7 @@ void TaskWifi(void *pvParameters) {
   }
 }
 
-float ax;
-float ay;
-float az;
+
 
 void TaskReadIMU(void *pvParameters) {
   for (;;) {
@@ -495,6 +505,23 @@ icm_20948_DMP_data_t data;
       quat.x = q1;
       quat.y = q2;
       quat.z = q3;
+
+
+      // read accelerometer data
+      ax = myICM.accX();
+      ay = myICM.accY();
+      az = myICM.accZ();
+
+      // read gyro data
+      ax = myICM.gyrX();
+      ay = myICM.gyrY();
+      az = myICM.gyrZ();
+
+      // read mag data
+      ax = myICM.magX();
+      ay = myICM.magY();
+      az = myICM.magZ();
+
     }
 
   }
